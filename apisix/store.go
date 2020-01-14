@@ -16,3 +16,15 @@ func InsertUpstreams(upstreams []*v1.Upstream) error{
 	txn.Commit()
 	return nil
 }
+
+// InsertRoute insert route to memDB
+func InsertRoute(routes []*v1.Route) error{
+	txn := DB.DB.Txn(true)
+	for _, r := range routes {
+		if err := txn.Insert(DB.Route, r); err != nil {
+			return err
+		}
+	}
+	txn.Commit()
+	return nil
+}

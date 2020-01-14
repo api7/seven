@@ -8,10 +8,8 @@ import (
 	"strconv"
 )
 
-
-
-// List list upstream from etcd , convert to v1.Upstream
-func List(baseUrl string) ([]*v1.Upstream, error) {
+// ListUpstream list upstream from etcd , convert to v1.Upstream
+func ListUpstream (baseUrl string) ([]*v1.Upstream, error) {
 	url := baseUrl + "/upstreams"
 	ret, _ := Get(url)
 	var upstreamsResponse UpstreamsResponse
@@ -33,7 +31,7 @@ func List(baseUrl string) ([]*v1.Upstream, error) {
 // convert convert Upstream from etcd to v1.Upstream
 func (u *Upstream)convert() (*v1.Upstream, error){
 	// id
-	keys := strings.Split(u.Key, "/")
+	keys := strings.Split(*u.Key, "/")
 	id := keys[len(keys) - 1]
 	// Name
 	name := u.UpstreamNodes.Desc
@@ -52,7 +50,7 @@ func (u *Upstream)convert() (*v1.Upstream, error){
 		nodes = append(nodes, node)
 	}
 
-	return &v1.Upstream{ID: &id, Name: &name, Type: &LBType, Key: &key, Nodes: nodes}, nil
+	return &v1.Upstream{ID: &id, Name: name, Type: LBType, Key: key, Nodes: nodes}, nil
 }
 
 type UpstreamsResponse struct {
@@ -65,12 +63,12 @@ type Upstreams struct{
 }
 
 type Upstream struct {
-	Key string `json:"key"` // upstream key
+	Key *string `json:"key"` // upstream key
 	UpstreamNodes UpstreamNodes `json:"value"`
 }
 
 type UpstreamNodes struct {
 	Nodes map[string]int64 `json:"nodes"`
-	Desc string `json:"desc"` // upstream name  = k8s svc
-	LBType string `json:"type"` // 负载均衡类型
+	Desc *string `json:"desc"` // upstream name  = k8s svc
+	LBType *string `json:"type"` // 负载均衡类型
 }
