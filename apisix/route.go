@@ -45,21 +45,21 @@ func (r *Route) convert() (*v1.Route, error) {
 	serviceId := r.Value.SerivceId
 	// plugins
 	var plugins []*v1.Plugin
-	for k, v := range r.Value.Plugins{
+	for k, v := range r.Value.Plugins {
 		m := make(map[string]interface{})
 		m[k] = v
 		plugins = append(plugins, &v1.Plugin{Config: m})
 	}
 
 	return &v1.Route{
-		ID: &id,
-		Name: name,
-		Host: host,
-		Path: path,
-		Methods: methods,
+		ID:         &id,
+		Name:       name,
+		Host:       host,
+		Path:       path,
+		Methods:    methods,
 		UpstreamId: upstreamId,
-		ServiceId: serviceId,
-		Plugins: plugins,
+		ServiceId:  serviceId,
+		Plugins:    plugins,
 	}, nil
 }
 
