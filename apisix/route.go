@@ -54,7 +54,7 @@ func (r *Route) convert() (*v1.Route, error) {
 	return &v1.Route{
 		ID: &id,
 		Name: name,
-		Host: *host,
+		Host: host,
 		Path: path,
 		Methods: methods,
 		UpstreamId: upstreamId,
