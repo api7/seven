@@ -106,7 +106,7 @@ func NewServiceWorkers(services []*v1.Service, quit chan Quit) ServiceWorkerGrou
 	for _, s := range services {
 		rw := &serviceWorker{Service: s, Quit: quit}
 		rw.start()
-		swg.Add(*s.UpstreamId, rw) // todo key is upstreamName
+		swg.Add(*s.UpstreamName, rw)
 	}
 	return swg
 }
