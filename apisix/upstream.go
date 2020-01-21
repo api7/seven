@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"strconv"
+	"github.com/gxthrj/seven/utils"
 )
 
 // ListUpstream list upstream from etcd , convert to v1.Upstream
@@ -21,10 +22,45 @@ func ListUpstream (baseUrl string) ([]*v1.Upstream, error) {
 			if n, err := u.convert(); err == nil {
 				upstreams = append(upstreams, n)
 			} else {
-				return nil, fmt.Errorf("upstream: %s 转换失败, %s", u.UpstreamNodes.Desc, err.Error())
+				return nil, fmt.Errorf("upstream: %s 转换失败, %s", *u.UpstreamNodes.Desc, err.Error())
 			}
 		}
 		return upstreams, nil
+	}
+}
+
+func AddUpstream(upstream *v1.Upstream, baseUrl string) error{
+	url := fmt.Sprintf("%s/upstreams", baseUrl)
+	ur := convert2UpstreamRequest(upstream)
+	if b, err := json.Marshal(ur); err != nil {
+		return err
+	}else {
+		if _, err := utils.Post(url, b); err != nil {
+			return err
+		}else {
+			return nil
+		}
+	}
+}
+
+func UpdateUpstream(upstream *v1.Upstream, baseUrl string) error{
+	url := fmt.Sprintf("%s/upstreams/%s", baseUrl, *upstream.ID)
+	ur := convert2UpstreamRequest(upstream)
+	if b, err := json.Marshal(ur); err != nil {
+		return err
+	}else {
+		if _, err := utils.Patch(url, b); err != nil {
+			return err
+		}else {
+			return nil
+		}
+	}
+}
+
+func convert2UpstreamRequest(upstream *v1.Upstream) *UpstreamRequest{
+	return &UpstreamRequest{
+		LBType: *upstream.Type,
+		Desc: *upstream.Name,
 	}
 }
 
@@ -71,4 +107,11 @@ type UpstreamNodes struct {
 	Nodes map[string]int64 `json:"nodes"`
 	Desc *string `json:"desc"` // upstream name  = k8s svc
 	LBType *string `json:"type"` // 负载均衡类型
+}
+
+//{"type":"roundrobin","nodes":{"10.244.10.11:8080":100},"desc":"somesvc"}
+type UpstreamRequest struct {
+	LBType string `json:"type"`
+	Nodes map[string]int64 `json:"nodes"`
+	Desc string `json:"desc"`
 }

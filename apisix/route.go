@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
 	"strings"
+	"github.com/gxthrj/seven/utils"
 )
 
 // ListRoute list route from etcd , convert to v1.Route
@@ -20,13 +21,52 @@ func ListRoute(baseUrl string) ([]*v1.Route, error) {
 			if n, err := u.convert(); err == nil {
 				routes = append(routes, n)
 			} else {
-				return nil, fmt.Errorf("upstream: %s 转换失败, %s", u.Value.Desc, err.Error())
+				return nil, fmt.Errorf("upstream: %s 转换失败, %s", *u.Value.Desc, err.Error())
 			}
 		}
 		return routes, nil
 	}
 }
 
+func AddRoute(route *v1.Route, baseUrl string) error{
+	url := fmt.Sprintf("%s/routes", baseUrl)
+	rr := convert2RouteRequest(route)
+	if b, err := json.Marshal(rr); err != nil {
+		return err
+	}else {
+		if _, err := utils.Post(url, b); err != nil {
+			return err
+		}else {
+			return nil
+		}
+	}
+}
+
+func UpdateRoute(route *v1.Route, baseUrl string) error{
+	url := fmt.Sprintf("%s/routes/%s", baseUrl, *route.ID)
+	rr := convert2RouteRequest(route)
+	if b, err := json.Marshal(rr); err != nil {
+		return err
+	}else {
+		if _, err := utils.Patch(url, b); err != nil {
+			return err
+		}else {
+			return nil
+		}
+	}
+}
+
+func convert2RouteRequest(route *v1.Route) *RouteRequest {
+	return &RouteRequest{
+		Desc: *route.Name,
+		Host: *route.Host,
+		Uri: *route.Path,
+		ServiceId: *route.ServiceId,
+		Plugins: *route.Plugins,
+	}
+}
+
+// convert apisix RouteResponse -> apisix-types v1.Route
 func (r *Route) convert() (*v1.Route, error) {
 	// id
 	ks := strings.Split(r.Key, "/")
@@ -42,14 +82,10 @@ func (r *Route) convert() (*v1.Route, error) {
 	// upstreamId
 	upstreamId := r.Value.UpstreamId
 	// serviceId
-	serviceId := r.Value.SerivceId
+	serviceId := r.Value.ServiceId
 	// plugins
-	var plugins []*v1.Plugin
-	for k, v := range r.Value.Plugins {
-		m := make(map[string]interface{})
-		m[k] = v
-		plugins = append(plugins, &v1.Plugin{Config: m})
-	}
+	var plugins v1.Plugins
+	plugins = r.Value.Plugins
 
 	return &v1.Route{
 		ID:         &id,
@@ -59,7 +95,7 @@ func (r *Route) convert() (*v1.Route, error) {
 		Methods:    methods,
 		UpstreamId: upstreamId,
 		ServiceId:  serviceId,
-		Plugins:    plugins,
+		Plugins:    &plugins,
 	}, nil
 }
 
@@ -79,10 +115,18 @@ type Route struct {
 
 type Value struct {
 	UpstreamId *string                `json:"upstream_id"`
-	SerivceId  *string                `json:"service_id"`
+	ServiceId  *string                `json:"service_id"`
 	Plugins    map[string]interface{} `json:"plugins"`
 	Host       *string                `json:"host,omitempty"`
 	Uri        *string                `json:"uri"`
 	Desc       *string                `json:"desc"`
 	Methods    []*string              `json:"methods,omitempty"`
+}
+
+type RouteRequest struct {
+	Desc      string                 `json:"desc"`
+	Uri       string                 `json:"uri"`
+	Host      string                 `json:"host"`
+	ServiceId string                 `json:"service_id"`
+	Plugins   map[string]interface{} `json:"plugins"`
 }

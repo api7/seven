@@ -3,6 +3,7 @@ package apisix
 import (
 	"github.com/gxthrj/seven/DB"
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
+	"fmt"
 )
 
 // insertUpstream insert upstream to memDB
@@ -27,4 +28,32 @@ func InsertRoute(routes []*v1.Route) error{
 	}
 	txn.Commit()
 	return nil
+}
+// FindRoute find current route in memDB
+func FindRoute(route *v1.Route) (*v1.Route,error){
+	txn := DB.DB.Txn(false)
+	raw, _ := txn.First(DB.Route, "name", route.Name)
+	if raw != nil { // update
+		currentRoute := raw.(*v1.Route)
+		return currentRoute, nil
+	} else {
+		return nil, fmt.Errorf("NOT FOUND")
+	}
+}
+
+func FindUpstreamByName(name string) (*v1.Upstream, error){
+	txn := DB.DB.Txn(false)
+	raw, _ := txn.First(DB.Upstream, "name", name)
+	if raw != nil {
+		currentUpstream := raw.(*v1.Upstream)
+		return currentUpstream, nil
+	}else { // add Upstream
+		// todo add upstream event
+	}
+	return nil, nil
+}
+
+func FindServiceByName(name string) (*v1.Service, error){
+	//txn := DB.DB.Txn(false)
+	return nil, nil
 }
