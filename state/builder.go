@@ -73,9 +73,10 @@ func paddingUpstream(upstream *v1.Upstream, currentUpstream *v1.Upstream){
 // NewRouteWorkers make routeWrokers group by service per CRD
 // 1.make routes group by (1_2_3) it may be a map like map[1_2_3][]Route;
 // 2.route is listenning Event from the ready of 1_2_3;
-func NewRouteWorkers(routes []*v1.Route, quit chan Quit) RouteWorkerGroup{
+func NewRouteWorkers(routes []*v1.Route) RouteWorkerGroup{
 	rwg := make(RouteWorkerGroup)
 	for _, r := range routes {
+		quit := make(chan Quit)
 		rw := &routeWorker{Route: r, Quit: quit}
 		rw.start()
 		rwg.Add(*r.ServiceName, rw)
@@ -85,6 +86,7 @@ func NewRouteWorkers(routes []*v1.Route, quit chan Quit) RouteWorkerGroup{
 
 // 3.route get the Event and trigger a padding for object,then diff,sync;
 func (r *routeWorker) trigger(event Event) error{
+	defer close(r.Quit)
 	// consumer Event
 	service := event.Obj.(v1.Service)
 	r.ServiceId = service.ID

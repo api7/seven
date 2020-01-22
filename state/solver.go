@@ -4,7 +4,7 @@ package state
 func (s *ApisixCombination)Solver() (bool, error){
 	quit := make(chan Quit)
 	// 1.route workers
-	rwg := NewRouteWorkers(s.Routes, quit)
+	rwg := NewRouteWorkers(s.Routes)
 	// 2.service workers
 	swg := NewServiceWorkers(s.Services, quit, &rwg)
 	// 3.upstream workers
