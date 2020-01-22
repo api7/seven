@@ -18,6 +18,18 @@ func InsertUpstreams(upstreams []*v1.Upstream) error{
 	return nil
 }
 
+func InsertServices(services []*v1.Service) error {
+	txn := DB.DB.Txn(true)
+	for _, s := range services {
+		if err := txn.Insert(DB.Service, s); err != nil {
+			return err
+		}
+	}
+	txn.Commit()
+	return nil
+}
+
+
 // InsertRoute insert route to memDB
 func InsertRoute(routes []*v1.Route) error{
 	txn := DB.DB.Txn(true)
@@ -47,8 +59,6 @@ func FindUpstreamByName(name string) (*v1.Upstream, error){
 	if raw != nil {
 		currentUpstream := raw.(*v1.Upstream)
 		return currentUpstream, nil
-	}else { // add Upstream
-		// todo add upstream event
 	}
 	return nil, nil
 }

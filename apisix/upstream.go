@@ -29,16 +29,21 @@ func ListUpstream (baseUrl string) ([]*v1.Upstream, error) {
 	}
 }
 
-func AddUpstream(upstream *v1.Upstream, baseUrl string) error{
+func AddUpstream(upstream *v1.Upstream, baseUrl string) (*UpstreamResponse, error){
 	url := fmt.Sprintf("%s/upstreams", baseUrl)
 	ur := convert2UpstreamRequest(upstream)
 	if b, err := json.Marshal(ur); err != nil {
-		return err
+		return nil, err
 	}else {
-		if _, err := utils.Post(url, b); err != nil {
-			return err
+		if res, err := utils.Post(url, b); err != nil {
+			return nil, err
 		}else {
-			return nil
+			var uRes UpstreamResponse
+			if err = json.Unmarshal(res, &uRes); err != nil {
+				return nil, err
+			}else {
+				return &uRes, nil
+			}
 		}
 	}
 }
@@ -91,6 +96,11 @@ func (u *Upstream)convert() (*v1.Upstream, error){
 
 type UpstreamsResponse struct {
 	Upstreams Upstreams `json:"node"`
+}
+
+type UpstreamResponse struct {
+	Action string `json:"action"`
+	Upstream Upstream `json:"upstream"`
 }
 
 type Upstreams struct{

@@ -4,11 +4,29 @@ import (
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
 	"github.com/gxthrj/seven/apisix"
 	"github.com/gxthrj/seven/utils"
+	"strconv"
+	"strings"
+	"github.com/gxthrj/seven/DB"
 )
+
+type ApisixCombination struct {
+	Routes    []*v1.Route
+	Services  []*v1.Service
+	Upstreams []*v1.Upstream
+}
 
 type Quit struct {
 	Name string
 }
+
+const (
+	RouteKind    = "route"
+	ServiceKind  = "service"
+	UpstreamKind = "upstream"
+	Create       = "create"
+	Update       = "update"
+	Delete       = "delete"
+)
 
 type Event struct {
 	Kind string      // route/service/upstream
@@ -44,13 +62,13 @@ type serviceWorker struct {
 }
 
 // start start watch event
-func (w *serviceWorker) start() {
+func (w *serviceWorker) start(rwg *RouteWorkerGroup) {
 	w.Event = make(chan Event)
 	go func() {
 		for {
 			select {
 			case event := <-w.Event:
-				w.trigger(event)
+				w.trigger(event, rwg)
 			case <-w.Quit:
 				return
 			}
@@ -58,12 +76,15 @@ func (w *serviceWorker) start() {
 	}()
 }
 
-func (w *serviceWorker) trigger(event Event) error{
-	// todo consumer Event
+func (w *serviceWorker) trigger(event Event, rwg *RouteWorkerGroup) error {
+	// consumer Event set upstreamID
+	upstream := event.Obj.(v1.Upstream)
+	w.UpstreamId = upstream.ID
 
+	op := Update
 	// padding
 	currentRoute, _ := apisix.FindServiceByName(*w.Service.Name)
-	//paddingService(w.Route, currentRoute)
+	paddingService(w.Service, currentRoute)
 	// diff
 	hasDiff, err := utils.HasDiff(w.Service, currentRoute)
 	// sync
@@ -71,10 +92,34 @@ func (w *serviceWorker) trigger(event Event) error{
 		return err
 	}
 	if hasDiff {
-		//w.sync()
+		if *w.Service.ID == strconv.Itoa(0) {
+			op = Create
+			// 1. sync apisix and get id
+			if serviceResponse, err := apisix.AddService(w.Service, BaseUrl); err != nil {
+				// todo log error
+			}else {
+				tmp := strings.Split(*serviceResponse.Service.Key, "/")
+				*w.Service.ID = tmp[len(tmp) - 1]
+			}
+			// 2. sync memDB
+			apisix.InsertServices([]*v1.Service{w.Service})
+		}else {
+			op = Update
+			// 1. sync memDB
+			db := DB.ServiceDB{w.Service}
+			if err := db.UpdateService(); err != nil {
+				// todo log error
+			}
+			// 2. sync apisix
+			apisix.UpdateService(w.Service, BaseUrl)
+		}
 	}
-	// todo broadcast
-
+	// broadcast to route
+	routeWorkers := (*rwg)[*w.Service.Name]
+	for _, rw := range routeWorkers{
+		event := &Event{Kind: ServiceKind, Op: op, Obj: w.Service}
+		rw.Event <- *event
+	}
 	return nil
 }
 

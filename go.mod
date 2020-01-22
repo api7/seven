@@ -3,7 +3,7 @@ module github.com/gxthrj/seven
 go 1.13
 
 require (
-	github.com/gxthrj/apisix-types v0.0.8
+	github.com/gxthrj/apisix-types v0.0.9
 	github.com/hashicorp/go-memdb v1.0.4
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/onsi/ginkgo v1.11.0 // indirect

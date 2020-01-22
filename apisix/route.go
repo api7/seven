@@ -28,16 +28,21 @@ func ListRoute(baseUrl string) ([]*v1.Route, error) {
 	}
 }
 
-func AddRoute(route *v1.Route, baseUrl string) error{
+func AddRoute(route *v1.Route, baseUrl string) (*RoutesResponse, error){
 	url := fmt.Sprintf("%s/routes", baseUrl)
 	rr := convert2RouteRequest(route)
 	if b, err := json.Marshal(rr); err != nil {
-		return err
+		return nil, err
 	}else {
-		if _, err := utils.Post(url, b); err != nil {
-			return err
+		if res, err := utils.Post(url, b); err != nil {
+			return nil, err
 		}else {
-			return nil
+			var routeResp RoutesResponse
+			if err = json.Unmarshal(res, &routeResp); err != nil {
+				return nil, err
+			}else {
+				return &routeResp, nil
+			}
 		}
 	}
 }

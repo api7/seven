@@ -5,6 +5,8 @@ import (
 	"github.com/gxthrj/seven/apisix"
 	"strconv"
 	"github.com/gxthrj/seven/utils"
+	"strings"
+	"github.com/gxthrj/seven/DB"
 )
 
 var BaseUrl = "http://172.16.20.90:30116/apisix/admin"
@@ -35,8 +37,7 @@ func LoadTargetState(routes []*v1.Route, upstreams []*v1.Upstream){
 
 // paddingRoute padding route from memDB
 func paddingRoute(route *v1.Route, currentRoute *v1.Route){
-	// 1.get object from memDB
-	// 2.padding object, just id
+	// padding object, just id
 	if currentRoute == nil {
 		// NOT FOUND : set Id = 0
 		id := strconv.Itoa(0)
@@ -46,8 +47,19 @@ func paddingRoute(route *v1.Route, currentRoute *v1.Route){
 	}
 }
 
+// padding service from memDB
+func paddingService(service *v1.Service, currentService *v1.Service){
+	if currentService == nil {
+		id := strconv.Itoa(0)
+		service.ID = &id
+	} else {
+		service.ID = currentService.ID
+	}
+}
+
 // paddingUpstream padding upstream from memDB
 func paddingUpstream(upstream *v1.Upstream, currentUpstream *v1.Upstream){
+	// padding id
 	if currentUpstream == nil {
 		// NOT FOUND : set Id = 0
 		id := strconv.Itoa(0)
@@ -55,6 +67,7 @@ func paddingUpstream(upstream *v1.Upstream, currentUpstream *v1.Upstream){
 	} else {
 		upstream.ID = currentUpstream.ID
 	}
+	// todo padding nodes ? or sync nodes from crd ?
 }
 
 // NewRouteWorkers make routeWrokers group by service per CRD
@@ -72,7 +85,9 @@ func NewRouteWorkers(routes []*v1.Route, quit chan Quit) RouteWorkerGroup{
 
 // 3.route get the Event and trigger a padding for object,then diff,sync;
 func (r *routeWorker) trigger(event Event) error{
-	// todo consumer Event
+	// consumer Event
+	service := event.Obj.(v1.Service)
+	r.ServiceId = service.ID
 
 	// padding
 	currentRoute, _ := apisix.FindRoute(r.Route)
@@ -94,42 +109,76 @@ func (r *routeWorker) trigger(event Event) error{
 // sync
 func (r *routeWorker) sync(){
 	if *r.Route.ID != strconv.Itoa(0) {
+		// 1. sync memDB
+		db := &DB.RouteDB{r.Route}
+		if err := db.UpdateRoute(); err != nil {
+			// todo log error
+		}
+		// 2. sync apisix
 		apisix.UpdateRoute(r.Route, BaseUrl)
 	} else {
-		apisix.AddRoute(r.Route, BaseUrl)
+		// 1. sync apisix and get id
+		if res, err := apisix.AddRoute(r.Route, BaseUrl); err != nil {
+			// todo log error
+		} else {
+			tmp := strings.Split(res.Routes.Key, "/")
+			*r.ID = tmp[len(tmp) - 1]
+		}
+		// 2. sync memDB
+		apisix.InsertRoute([]*v1.Route{r.Route})
 	}
 }
 
 // service
-func NewServiceWorkers(services []*v1.Service, quit chan Quit) ServiceWorkerGroup{
+func NewServiceWorkers(services []*v1.Service, quit chan Quit, rwg *RouteWorkerGroup) ServiceWorkerGroup{
 	swg := make(ServiceWorkerGroup)
 	for _, s := range services {
 		rw := &serviceWorker{Service: s, Quit: quit}
-		rw.start()
+		rw.start(rwg)
 		swg.Add(*s.UpstreamName, rw)
 	}
 	return swg
 }
 
 // upstream
-func SolverUpstream(upstreams []*v1.Upstream){
+func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 	for _, u := range upstreams {
+		op := Update
 		if currentUpstream, err := apisix.FindUpstreamByName(*u.Name); err != nil {
-			return
+			// todo log error
 		} else {
 			paddingUpstream(u, currentUpstream)
 			// diff
 			hasDiff, _ := utils.HasDiff(u, currentUpstream)
 			if hasDiff {
-				// sync
 				if *u.ID != strconv.Itoa(0) {
+					op = Update
+					// 1.sync memDB
+					upstreamDB := &DB.UpstreamDB{u}
+					if err := upstreamDB.UpdateUpstream(); err != nil {
+						// todo log error
+					}
+					// 2.sync apisix
 					apisix.UpdateUpstream(u, BaseUrl)
 				} else {
-					apisix.AddUpstream(u, BaseUrl)
+					op = Create
+					// 1.sync apisix and get response
+					if upstreamResponse, err := apisix.AddUpstream(u, BaseUrl); err != nil {
+						// todo log error
+					}else {
+						tmp := strings.Split(*upstreamResponse.Upstream.Key, "/")
+						*u.ID = tmp[len(tmp) - 1]
+					}
+					// 2.sync memDB
+					apisix.InsertUpstreams([]*v1.Upstream{u})
 				}
 			}
 		}
-		// todo broadcast
+		// anyway, broadcast to service
+		serviceWorkers := swg[*u.Name]
+		for _, sw := range serviceWorkers{
+			event := &Event{Kind: UpstreamKind, Op: op, Obj: u}
+			sw.Event <- *event
+		}
 	}
 }
-
