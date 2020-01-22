@@ -77,6 +77,7 @@ func (w *serviceWorker) start(rwg *RouteWorkerGroup) {
 }
 
 func (w *serviceWorker) trigger(event Event, rwg *RouteWorkerGroup) error {
+	defer close(w.Quit)
 	// consumer Event set upstreamID
 	upstream := event.Obj.(v1.Upstream)
 	w.UpstreamId = upstream.ID

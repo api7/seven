@@ -132,9 +132,10 @@ func (r *routeWorker) sync(){
 }
 
 // service
-func NewServiceWorkers(services []*v1.Service, quit chan Quit, rwg *RouteWorkerGroup) ServiceWorkerGroup{
+func NewServiceWorkers(services []*v1.Service, rwg *RouteWorkerGroup) ServiceWorkerGroup{
 	swg := make(ServiceWorkerGroup)
 	for _, s := range services {
+		quit := make(chan Quit)
 		rw := &serviceWorker{Service: s, Quit: quit}
 		rw.start(rwg)
 		swg.Add(*s.UpstreamName, rw)
