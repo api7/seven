@@ -7,6 +7,7 @@ import (
 	"strings"
 	"strconv"
 	"github.com/gxthrj/seven/utils"
+	"github.com/golang/glog"
 )
 
 // ListUpstream list upstream from etcd , convert to v1.Upstream
@@ -31,6 +32,7 @@ func ListUpstream (baseUrl string) ([]*v1.Upstream, error) {
 
 func AddUpstream(upstream *v1.Upstream, baseUrl string) (*UpstreamResponse, error){
 	url := fmt.Sprintf("%s/upstreams", baseUrl)
+	glog.Info(url)
 	ur := convert2UpstreamRequest(upstream)
 	if b, err := json.Marshal(ur); err != nil {
 		return nil, err
@@ -40,8 +42,10 @@ func AddUpstream(upstream *v1.Upstream, baseUrl string) (*UpstreamResponse, erro
 		}else {
 			var uRes UpstreamResponse
 			if err = json.Unmarshal(res, &uRes); err != nil {
+				glog.Errorf("json Unmarshal error: %s", err.Error())
 				return nil, err
 			}else {
+				glog.Info(uRes)
 				return &uRes, nil
 			}
 		}
@@ -63,9 +67,14 @@ func UpdateUpstream(upstream *v1.Upstream, baseUrl string) error{
 }
 
 func convert2UpstreamRequest(upstream *v1.Upstream) *UpstreamRequest{
+	nodes := make(map[string]int64)
+	for _, u := range upstream.Nodes {
+		nodes[*u.IP + ":" + strconv.Itoa(*u.Port)] = int64(*u.Weight)
+	}
 	return &UpstreamRequest{
 		LBType: *upstream.Type,
 		Desc: *upstream.Name,
+		Nodes: nodes,
 	}
 }
 

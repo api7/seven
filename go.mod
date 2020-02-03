@@ -3,6 +3,7 @@ module github.com/gxthrj/seven
 go 1.13
 
 require (
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/gxthrj/apisix-types v0.0.9
 	github.com/hashicorp/go-memdb v1.0.4
 	github.com/mattn/go-colorable v0.1.4 // indirect
