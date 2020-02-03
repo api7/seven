@@ -109,7 +109,7 @@ type UpstreamsResponse struct {
 
 type UpstreamResponse struct {
 	Action string `json:"action"`
-	Upstream Upstream `json:"upstream"`
+	Upstream Upstream `json:"node"`
 }
 
 type Upstreams struct{
