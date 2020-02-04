@@ -64,6 +64,11 @@ func FindUpstreamByName(name string) (*v1.Upstream, error){
 }
 
 func FindServiceByName(name string) (*v1.Service, error){
-	//txn := DB.DB.Txn(false)
+	txn := DB.DB.Txn(false)
+	raw, _ := txn.First(DB.Service, "name", name)
+	if raw != nil {
+		currentService := raw.(*v1.Service)
+		return currentService, nil
+	}
 	return nil, nil
 }
