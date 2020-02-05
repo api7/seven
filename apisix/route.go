@@ -67,22 +67,12 @@ type Redirect struct {
 }
 
 func convert2RouteRequest(route *v1.Route) *RouteRequest {
-	//tp := make(map[string]interface{})
-	////"redirect": {
-	////            "ret_code": 200,
-	////            "uri": "/hello2"
-	////        }
-	//r := &Redirect{RetCode: 200, Uri:"/hello3"}
-	//tp["redirect"] = r
-	//plugins := &v1.Plugins{}
-	//plugins = tp
 	return &RouteRequest{
 		Desc:      *route.Name,
 		Host:      *route.Host,
 		Uri:       *route.Path,
 		ServiceId: *route.ServiceId,
-		//Plugins:   route.Plugins,
-		//Plugins: tp,
+		Plugins:   route.Plugins,
 	}
 }
 
