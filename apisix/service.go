@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
 	"github.com/gxthrj/seven/utils"
+	"github.com/golang/glog"
 )
 
 func AddService(service *v1.Service, baseUrl string) (*ServiceResponse, error) {
@@ -46,22 +47,24 @@ func UpdateService(service *v1.Service, baseUrl string) (*ServiceResponse, error
 }
 
 func convert2ServiceRequest(service *v1.Service) *ServiceRequest {
-	return &ServiceRequest{
+	request := &ServiceRequest{
 		Desc:       service.Name,
 		UpstreamId: service.UpstreamId,
-		Plugins:    *service.Plugins,
+		Plugins:    service.Plugins,
 	}
+	glog.Info(*request.Desc)
+	return request
 }
 
 type ServiceRequest struct {
 	Desc       *string                `json:"desc,omitempty"`
 	UpstreamId *string                `json:"upstream_id"`
-	Plugins    map[string]interface{} `json:"plugins,omitempty"`
+	Plugins    *v1.Plugins `json:"plugins,omitempty"`
 }
 
 type ServiceResponse struct {
 	Action  string  `json:"action"`
-	Service Service `json:"service"`
+	Service Service `json:"node"`
 }
 
 type Service struct {

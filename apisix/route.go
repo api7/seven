@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
-	"strings"
 	"github.com/gxthrj/seven/utils"
+	"strings"
 )
 
 // ListRoute list route from etcd , convert to v1.Route
@@ -28,53 +28,69 @@ func ListRoute(baseUrl string) ([]*v1.Route, error) {
 	}
 }
 
-func AddRoute(route *v1.Route, baseUrl string) (*RoutesResponse, error){
+func AddRoute(route *v1.Route, baseUrl string) (*RouteResponse, error) {
 	url := fmt.Sprintf("%s/routes", baseUrl)
 	rr := convert2RouteRequest(route)
 	if b, err := json.Marshal(rr); err != nil {
 		return nil, err
-	}else {
+	} else {
 		if res, err := utils.Post(url, b); err != nil {
 			return nil, err
-		}else {
-			var routeResp RoutesResponse
+		} else {
+			var routeResp RouteResponse
 			if err = json.Unmarshal(res, &routeResp); err != nil {
 				return nil, err
-			}else {
+			} else {
 				return &routeResp, nil
 			}
 		}
 	}
 }
 
-func UpdateRoute(route *v1.Route, baseUrl string) error{
+func UpdateRoute(route *v1.Route, baseUrl string) error {
 	url := fmt.Sprintf("%s/routes/%s", baseUrl, *route.ID)
 	rr := convert2RouteRequest(route)
 	if b, err := json.Marshal(rr); err != nil {
 		return err
-	}else {
+	} else {
 		if _, err := utils.Patch(url, b); err != nil {
 			return err
-		}else {
+		} else {
 			return nil
 		}
 	}
 }
 
+type Redirect struct {
+	RetCode int64 `json:"ret_code"`
+	Uri string `json:"uri"`
+}
+
 func convert2RouteRequest(route *v1.Route) *RouteRequest {
+	//tp := make(map[string]interface{})
+	////"redirect": {
+	////            "ret_code": 200,
+	////            "uri": "/hello2"
+	////        }
+	//r := &Redirect{RetCode: 200, Uri:"/hello3"}
+	//tp["redirect"] = r
+	//plugins := &v1.Plugins{}
+	//plugins = tp
 	return &RouteRequest{
-		Desc: *route.Name,
-		Host: *route.Host,
-		Uri: *route.Path,
+		Desc:      *route.Name,
+		Host:      *route.Host,
+		Uri:       *route.Path,
 		ServiceId: *route.ServiceId,
-		Plugins: *route.Plugins,
+		//Plugins:   route.Plugins,
+		//Plugins: tp,
 	}
 }
 
 // convert apisix RouteResponse -> apisix-types v1.Route
 func (r *Route) convert() (*v1.Route, error) {
 	// id
-	ks := strings.Split(r.Key, "/")
+	key := r.Key
+	ks := strings.Split(*key, "/")
 	id := ks[len(ks)-1]
 	// name
 	name := r.Value.Desc
@@ -113,8 +129,13 @@ type Routes struct {
 	Routes []Route `json:"nodes"`
 }
 
+type RouteResponse struct {
+	Action string `json:"action"`
+	Route  Route  `json:"node"`
+}
+
 type Route struct {
-	Key   string `json:"key"`   // route key
+	Key   *string `json:"key"`   // route key
 	Value Value  `json:"value"` // route content
 }
 
@@ -129,9 +150,9 @@ type Value struct {
 }
 
 type RouteRequest struct {
-	Desc      string                 `json:"desc"`
-	Uri       string                 `json:"uri"`
-	Host      string                 `json:"host"`
-	ServiceId string                 `json:"service_id"`
-	Plugins   map[string]interface{} `json:"plugins"`
+	Desc      string      `json:"desc,omitempty"`
+	Uri       string      `json:"uri,omitempty"`
+	Host      string      `json:"host,omitempty"`
+	ServiceId string      `json:"service_id,omitempty"`
+	Plugins   *v1.Plugins `json:"plugins,omitempty"`
 }

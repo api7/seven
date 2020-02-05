@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"github.com/gxthrj/seven/DB"
+	"github.com/golang/glog"
 )
 
 type ApisixCombination struct {
@@ -98,6 +99,7 @@ func (w *serviceWorker) trigger(event Event, rwg *RouteWorkerGroup) error {
 			// 1. sync apisix and get id
 			if serviceResponse, err := apisix.AddService(w.Service, BaseUrl); err != nil {
 				// todo log error
+				glog.Info(err.Error())
 			}else {
 				tmp := strings.Split(*serviceResponse.Service.Key, "/")
 				*w.Service.ID = tmp[len(tmp) - 1]

@@ -88,7 +88,7 @@ func NewRouteWorkers(routes []*v1.Route) RouteWorkerGroup{
 func (r *routeWorker) trigger(event Event) error{
 	defer close(r.Quit)
 	// consumer Event
-	service := event.Obj.(v1.Service)
+	service := event.Obj.(*v1.Service)
 	r.ServiceId = service.ID
 
 	// padding
@@ -123,7 +123,8 @@ func (r *routeWorker) sync(){
 		if res, err := apisix.AddRoute(r.Route, BaseUrl); err != nil {
 			// todo log error
 		} else {
-			tmp := strings.Split(res.Routes.Key, "/")
+			key := res.Route.Key
+			tmp := strings.Split(*key, "/")
 			*r.ID = tmp[len(tmp) - 1]
 		}
 		// 2. sync memDB
