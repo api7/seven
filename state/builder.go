@@ -7,13 +7,11 @@ import (
 	"github.com/gxthrj/seven/utils"
 	"strings"
 	"github.com/gxthrj/seven/DB"
+	"github.com/gxthrj/seven/conf"
+	"github.com/golang/glog"
 )
 
-var BaseUrl = "http://172.16.20.90:30116/apisix/admin"
 
-func conf(baseUrl string){
-	BaseUrl = baseUrl
-}
 
 // ListFromApisix list all object from apisix
 func ListFromApisix(){
@@ -22,8 +20,8 @@ func ListFromApisix(){
 
 // InitDB insert object into memDB first time
 func InitDB(){
-	routes, _ := apisix.ListRoute(BaseUrl)
-	upstreams, _ := apisix.ListUpstream(BaseUrl)
+	routes, _ := apisix.ListRoute(conf.BaseUrl)
+	upstreams, _ := apisix.ListUpstream(conf.BaseUrl)
 	apisix.InsertRoute(routes)
 	apisix.InsertUpstreams(upstreams)
 }
@@ -90,6 +88,7 @@ func (r *routeWorker) trigger(event Event) error{
 	// consumer Event
 	service := event.Obj.(*v1.Service)
 	r.ServiceId = service.ID
+	glog.Infof("trigger routeWorker %s from %s, %s", *r.Name, event.Op, *service.Name)
 
 	// padding
 	currentRoute, _ := apisix.FindRoute(r.Route)
@@ -117,10 +116,11 @@ func (r *routeWorker) sync(){
 			// todo log error
 		}
 		// 2. sync apisix
-		apisix.UpdateRoute(r.Route, BaseUrl)
+		apisix.UpdateRoute(r.Route, conf.BaseUrl)
+		glog.Info("update route %s, %s", r.Name, r.ServiceId)
 	} else {
 		// 1. sync apisix and get id
-		if res, err := apisix.AddRoute(r.Route, BaseUrl); err != nil {
+		if res, err := apisix.AddRoute(r.Route, conf.BaseUrl); err != nil {
 			// todo log error
 		} else {
 			key := res.Route.Key
@@ -129,6 +129,7 @@ func (r *routeWorker) sync(){
 		}
 		// 2. sync memDB
 		apisix.InsertRoute([]*v1.Route{r.Route})
+		glog.Info("create route %s, %s", r.Name, r.ServiceId)
 	}
 }
 
@@ -163,11 +164,11 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 						// todo log error
 					}
 					// 2.sync apisix
-					apisix.UpdateUpstream(u, BaseUrl)
+					apisix.UpdateUpstream(u, conf.BaseUrl)
 				} else {
 					op = Create
 					// 1.sync apisix and get response
-					if upstreamResponse, err := apisix.AddUpstream(u, BaseUrl); err != nil {
+					if upstreamResponse, err := apisix.AddUpstream(u, conf.BaseUrl); err != nil {
 						// todo log error
 					}else {
 						tmp := strings.Split(*upstreamResponse.Upstream.Key, "/")
@@ -178,6 +179,7 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 				}
 			}
 		}
+		glog.Infof("solver upstream %s:%s", op, *u.Name)
 		// anyway, broadcast to service
 		serviceWorkers := swg[*u.Name]
 		for _, sw := range serviceWorkers{

@@ -15,6 +15,7 @@ type RouteDB struct {
 
 func (db *RouteDB) UpdateRoute() error{
 	txn := DB.Txn(true)
+	defer txn.Abort()
 	// 1. delete
 	if _, err := txn.DeleteAll(Route, "id", db.Route.ID); err != nil {
 		return err

@@ -16,7 +16,7 @@ func ListRoute(baseUrl string) ([]*v1.Route, error) {
 	if err := json.Unmarshal(ret, &routesResponse); err != nil {
 		return nil, fmt.Errorf("json转换失败")
 	} else {
-		routes := make([]*v1.Route, len(routesResponse.Routes.Routes))
+		routes := make([]*v1.Route, 0)
 		for _, u := range routesResponse.Routes.Routes {
 			if n, err := u.convert(); err == nil {
 				routes = append(routes, n)

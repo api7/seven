@@ -8,6 +8,7 @@ import (
 	"strings"
 	"github.com/gxthrj/seven/DB"
 	"github.com/golang/glog"
+	"github.com/gxthrj/seven/conf"
 )
 
 type ApisixCombination struct {
@@ -78,9 +79,11 @@ func (w *serviceWorker) start(rwg *RouteWorkerGroup) {
 }
 
 func (w *serviceWorker) trigger(event Event, rwg *RouteWorkerGroup) error {
+	glog.Infof("1.service trigger from %s, %s", event.Op, event.Kind)
 	defer close(w.Quit)
 	// consumer Event set upstreamID
 	upstream := event.Obj.(*v1.Upstream)
+	glog.Infof("2.service trigger from %s, %s", event.Op, *upstream.Name)
 	w.UpstreamId = upstream.ID
 
 	op := Update
@@ -97,7 +100,7 @@ func (w *serviceWorker) trigger(event Event, rwg *RouteWorkerGroup) error {
 		if *w.Service.ID == strconv.Itoa(0) {
 			op = Create
 			// 1. sync apisix and get id
-			if serviceResponse, err := apisix.AddService(w.Service, BaseUrl); err != nil {
+			if serviceResponse, err := apisix.AddService(w.Service, conf.BaseUrl); err != nil {
 				// todo log error
 				glog.Info(err.Error())
 			}else {
@@ -106,6 +109,7 @@ func (w *serviceWorker) trigger(event Event, rwg *RouteWorkerGroup) error {
 			}
 			// 2. sync memDB
 			apisix.InsertServices([]*v1.Service{w.Service})
+			glog.Infof("create service %s, %s", *w.Name, *w.UpstreamId)
 		}else {
 			op = Update
 			// 1. sync memDB
@@ -114,13 +118,15 @@ func (w *serviceWorker) trigger(event Event, rwg *RouteWorkerGroup) error {
 				// todo log error
 			}
 			// 2. sync apisix
-			apisix.UpdateService(w.Service, BaseUrl)
+			apisix.UpdateService(w.Service, conf.BaseUrl)
+			glog.Infof("update service %s, %s", *w.Name, *w.UpstreamId)
 		}
 	}
 	// broadcast to route
 	routeWorkers := (*rwg)[*w.Service.Name]
 	for _, rw := range routeWorkers{
 		event := &Event{Kind: ServiceKind, Op: op, Obj: w.Service}
+		glog.Infof("send event %s, %s, %s", event.Kind, event.Op, *w.Service.Name)
 		rw.Event <- *event
 	}
 	return nil

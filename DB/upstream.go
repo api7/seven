@@ -15,6 +15,7 @@ type UpstreamDB struct {
 
 func (upstreamDB UpstreamDB) UpdateUpstream() error {
 	txn := DB.Txn(true)
+	defer txn.Abort()
 	// delete
 	if _, err := txn.DeleteAll(Upstream, "id", upstreamDB.Upstream.ID); err != nil {
 		return err

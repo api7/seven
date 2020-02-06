@@ -15,6 +15,7 @@ type ServiceDB struct {
 
 func (db *ServiceDB) UpdateService() error{
 	txn := DB.Txn(true)
+	defer txn.Abort()
 	// 1. delete
 	if _, err := txn.DeleteAll(Service, "id", db.Service.ID); err != nil {
 		return err

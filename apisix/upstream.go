@@ -18,7 +18,7 @@ func ListUpstream (baseUrl string) ([]*v1.Upstream, error) {
 	if err := json.Unmarshal(ret, &upstreamsResponse); err != nil {
 		return nil, fmt.Errorf("json转换失败")
 	} else {
-		upstreams := make([]*v1.Upstream, len(upstreamsResponse.Upstreams.Upstreams))
+		upstreams := make([]*v1.Upstream, 0)
 		for _, u := range upstreamsResponse.Upstreams.Upstreams {
 			if n, err := u.convert(); err == nil {
 				upstreams = append(upstreams, n)
@@ -90,7 +90,7 @@ func (u *Upstream)convert() (*v1.Upstream, error){
 	// key
 	key := u.Key
 	// nodes
-	nodes := make([]*v1.Node, len(u.UpstreamNodes.Nodes))
+	nodes := make([]*v1.Node, 0)
 	for k, v := range u.UpstreamNodes.Nodes {
 		ks := strings.Split(k, ":")
 		ip := ks[0]
