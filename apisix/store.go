@@ -85,6 +85,8 @@ func FindUpstreamByName(name string) (*v1.Upstream, error){
 	return nil, nil
 }
 
+// FindServiceByName find service from memDB,
+// if Not Found, find service from apisix
 func FindServiceByName(name string) (*v1.Service, error){
 	txn := DB.DB.Txn(false)
 	defer txn.Abort()
@@ -92,6 +94,20 @@ func FindServiceByName(name string) (*v1.Service, error){
 	if raw != nil {
 		currentService := raw.(*v1.Service)
 		return currentService, nil
+	}else {
+		// find upstream from apisix
+		if services, err := ListService(conf.BaseUrl); err != nil {
+			// todo log error
+		}else {
+			for _, s := range services {
+				if *(s.Name) == name {
+					// and save to memDB
+					InsertServices([]*v1.Service{s})
+					// return
+					return s, nil
+				}
+			}
+		}
 	}
 	return nil, nil
 }
