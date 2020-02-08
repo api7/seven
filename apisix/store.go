@@ -68,7 +68,7 @@ func FindUpstreamByName(name string) (*v1.Upstream, error){
 		return currentUpstream, nil
 	} else {
 		// find upstream from apisix
-		if upstreams, err := ListUpstream(conf.BaseUrl); err != nil {
+		if upstreams, err := ListUpstream(); err != nil {
 			// todo log error
 		}else {
 			for _, upstream := range upstreams {

@@ -21,7 +21,7 @@ func ListFromApisix(){
 // InitDB insert object into memDB first time
 func InitDB(){
 	routes, _ := apisix.ListRoute(conf.BaseUrl)
-	upstreams, _ := apisix.ListUpstream(conf.BaseUrl)
+	upstreams, _ := apisix.ListUpstream()
 	apisix.InsertRoute(routes)
 	apisix.InsertUpstreams(upstreams)
 }
@@ -164,7 +164,7 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 						// todo log error
 					}
 					// 2.sync apisix
-					apisix.UpdateUpstream(u, conf.BaseUrl)
+					apisix.UpdateUpstream(u)
 				} else {
 					op = Create
 					// 1.sync apisix and get response

@@ -8,11 +8,12 @@ import (
 	"strconv"
 	"github.com/gxthrj/seven/utils"
 	"github.com/golang/glog"
+	"github.com/gxthrj/seven/conf"
 )
 
 // ListUpstream list upstream from etcd , convert to v1.Upstream
-func ListUpstream (baseUrl string) ([]*v1.Upstream, error) {
-	url := baseUrl + "/upstreams"
+func ListUpstream () ([]*v1.Upstream, error) {
+	url := conf.BaseUrl + "/upstreams"
 	ret, _ := Get(url)
 	var upstreamsResponse UpstreamsResponse
 	if err := json.Unmarshal(ret, &upstreamsResponse); err != nil {
@@ -29,6 +30,20 @@ func ListUpstream (baseUrl string) ([]*v1.Upstream, error) {
 		return upstreams, nil
 	}
 }
+
+func IsExist(name string) (bool, error){
+	if upstreams, err := ListUpstream (); err != nil {
+		return false, err
+	} else {
+		for _, upstream := range upstreams {
+			if *upstream.Name == name {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+}
+
 
 func AddUpstream(upstream *v1.Upstream, baseUrl string) (*UpstreamResponse, error){
 	url := fmt.Sprintf("%s/upstreams", baseUrl)
@@ -52,8 +67,8 @@ func AddUpstream(upstream *v1.Upstream, baseUrl string) (*UpstreamResponse, erro
 	}
 }
 
-func UpdateUpstream(upstream *v1.Upstream, baseUrl string) error{
-	url := fmt.Sprintf("%s/upstreams/%s", baseUrl, *upstream.ID)
+func UpdateUpstream(upstream *v1.Upstream) error{
+	url := fmt.Sprintf("%s/upstreams/%s", conf.BaseUrl, *upstream.ID)
 	ur := convert2UpstreamRequest(upstream)
 	if b, err := json.Marshal(ur); err != nil {
 		return err
