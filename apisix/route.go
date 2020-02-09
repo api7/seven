@@ -6,11 +6,12 @@ import (
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
 	"github.com/gxthrj/seven/utils"
 	"strings"
+	"github.com/gxthrj/seven/conf"
 )
 
 // ListRoute list route from etcd , convert to v1.Route
-func ListRoute(baseUrl string) ([]*v1.Route, error) {
-	url := baseUrl + "/routes"
+func ListRoute() ([]*v1.Route, error) {
+	url := conf.BaseUrl + "/routes"
 	ret, _ := Get(url)
 	var routesResponse RoutesResponse
 	if err := json.Unmarshal(ret, &routesResponse); err != nil {

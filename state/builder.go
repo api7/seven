@@ -20,7 +20,7 @@ func ListFromApisix(){
 
 // InitDB insert object into memDB first time
 func InitDB(){
-	routes, _ := apisix.ListRoute(conf.BaseUrl)
+	routes, _ := apisix.ListRoute()
 	upstreams, _ := apisix.ListUpstream()
 	apisix.InsertRoute(routes)
 	apisix.InsertUpstreams(upstreams)

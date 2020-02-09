@@ -5,6 +5,7 @@ import (
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
 	"fmt"
 	"github.com/gxthrj/seven/conf"
+	"github.com/golang/glog"
 )
 
 // insertUpstream insert upstream to memDB
@@ -54,8 +55,22 @@ func FindRoute(route *v1.Route) (*v1.Route,error){
 		currentRoute := raw.(*v1.Route)
 		return currentRoute, nil
 	} else {
-		return nil, fmt.Errorf("NOT FOUND")
+		// find from apisix
+		if routes, err := ListRoute(); err != nil {
+			// todo log error
+		} else {
+			for _, r := range routes {
+				if *r.Name == *route.Name {
+					// insert to memDB
+					InsertRoute([]*v1.Route{r})
+					// return
+					return r, nil
+				}
+			}
+		}
+
 	}
+	return nil, fmt.Errorf("NOT FOUND")
 }
 // FindUpstreamByName find upstream from memDB,
 // if Not Found, find upstream from apisix
@@ -95,9 +110,10 @@ func FindServiceByName(name string) (*v1.Service, error){
 		currentService := raw.(*v1.Service)
 		return currentService, nil
 	}else {
-		// find upstream from apisix
+		// find service from apisix
 		if services, err := ListService(conf.BaseUrl); err != nil {
 			// todo log error
+			glog.Info(err.Error())
 		}else {
 			for _, s := range services {
 				if *(s.Name) == name {

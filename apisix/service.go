@@ -11,7 +11,7 @@ import (
 
 // ListUpstream list upstream from etcd , convert to v1.Upstream
 func ListService (baseUrl string) ([]*v1.Service, error) {
-	url := baseUrl + "/service"
+	url := baseUrl + "/services"
 	ret, _ := Get(url)
 	var servicesResponse ServicesResponse
 	if err := json.Unmarshal(ret, &servicesResponse); err != nil {
