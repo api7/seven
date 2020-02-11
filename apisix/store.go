@@ -116,7 +116,7 @@ func FindServiceByName(name string) (*v1.Service, error){
 			glog.Info(err.Error())
 		}else {
 			for _, s := range services {
-				if *(s.Name) == name {
+				if s.Name != nil && *(s.Name) == name {
 					// and save to memDB
 					InsertServices([]*v1.Service{s})
 					// return
