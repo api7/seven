@@ -60,7 +60,7 @@ func FindRoute(route *v1.Route) (*v1.Route,error){
 			// todo log error
 		} else {
 			for _, r := range routes {
-				if *r.Name == *route.Name {
+				if r.Name !=nil && *r.Name == *route.Name {
 					// insert to memDB
 					InsertRoute([]*v1.Route{r})
 					// return
