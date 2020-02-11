@@ -87,7 +87,7 @@ func FindUpstreamByName(name string) (*v1.Upstream, error){
 			// todo log error
 		}else {
 			for _, upstream := range upstreams {
-				if *(upstream.Name) == name {
+				if upstream.Name != nil && *(upstream.Name) == name {
 					// and save to memDB
 					InsertUpstreams([]*v1.Upstream{upstream})
 					// return
