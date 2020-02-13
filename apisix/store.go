@@ -9,17 +9,17 @@ import (
 )
 
 // insertUpstream insert upstream to memDB
-func InsertUpstreams(upstreams []*v1.Upstream) error{
-	txn := DB.DB.Txn(true)
-	defer txn.Abort()
-	for _, u := range upstreams{
-		if err := txn.Insert(DB.Upstream, u); err != nil {
-			return err
-		}
-	}
-	txn.Commit()
-	return nil
-}
+//func InsertUpstreams(upstreams []*v1.Upstream) error{
+//	txn := DB.DB.Txn(true)
+//	defer txn.Abort()
+//	for _, u := range upstreams{
+//		if err := txn.Insert(DB.Upstream, u); err != nil {
+//			return err
+//		}
+//	}
+//	txn.Commit()
+//	return nil
+//}
 
 func InsertServices(services []*v1.Service) error {
 	txn := DB.DB.Txn(true)
@@ -75,11 +75,9 @@ func FindRoute(route *v1.Route) (*v1.Route,error){
 // FindUpstreamByName find upstream from memDB,
 // if Not Found, find upstream from apisix
 func FindUpstreamByName(name string) (*v1.Upstream, error){
-	txn := DB.DB.Txn(false)
-	defer txn.Abort()
-	raw, _ := txn.First(DB.Upstream, "name", name)
-	if raw != nil {
-		currentUpstream := raw.(*v1.Upstream)
+	ur := &DB.UpstreamRequest{Name: name}
+	currentUpstream, _ := ur.FindUpstreamByName()
+	if currentUpstream != nil {
 		return currentUpstream, nil
 	} else {
 		// find upstream from apisix
@@ -89,7 +87,9 @@ func FindUpstreamByName(name string) (*v1.Upstream, error){
 			for _, upstream := range upstreams {
 				if upstream.Name != nil && *(upstream.Name) == name {
 					// and save to memDB
-					InsertUpstreams([]*v1.Upstream{upstream})
+					upstreamDB := &DB.UpstreamDB{Upstreams: []*v1.Upstream{upstream}}
+					upstreamDB.InsertUpstreams()
+					//InsertUpstreams([]*v1.Upstream{upstream})
 					// return
 					return upstream, nil
 				}

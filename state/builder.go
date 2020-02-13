@@ -165,8 +165,8 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 					}
 					if needToUpdate{
 						// 1.sync memDB
-						upstreamDB := &DB.UpstreamDB{u}
-						if err := upstreamDB.UpdateUpstream(); err != nil {
+						upstreamDB := &DB.UpstreamDB{Upstreams: []*v1.Upstream{u}}
+						if err := upstreamDB.UpdateUpstreams(); err != nil {
 							// todo log error
 						}
 						// 2.sync apisix
@@ -182,7 +182,9 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 						*u.ID = tmp[len(tmp) - 1]
 					}
 					// 2.sync memDB
-					apisix.InsertUpstreams([]*v1.Upstream{u})
+					//apisix.InsertUpstreams([]*v1.Upstream{u})
+					upstreamDB := &DB.UpstreamDB{Upstreams: []*v1.Upstream{u}}
+					upstreamDB.InsertUpstreams()
 				}
 			}
 		}
