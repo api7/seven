@@ -22,7 +22,6 @@ func (s *ApisixCombination)Solver() (bool, error){
 	// 2.service workers
 	swg := NewServiceWorkers(s.Services, &rwg)
 	// 3.upstream workers
-	//SolverUpstream(s.Upstreams, swg)
 	uqo := &UpstreamQueueObj{Upstreams: s.Upstreams, ServiceWorkerGroup: swg}
 	uqo.AddQueue()
 	return true, nil

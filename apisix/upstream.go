@@ -1,18 +1,18 @@
 package apisix
 
 import (
-	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
 	"encoding/json"
 	"fmt"
-	"strings"
-	"strconv"
-	"github.com/gxthrj/seven/utils"
 	"github.com/golang/glog"
+	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
 	"github.com/gxthrj/seven/conf"
+	"github.com/gxthrj/seven/utils"
+	"strconv"
+	"strings"
 )
 
 // ListUpstream list upstream from etcd , convert to v1.Upstream
-func ListUpstream () ([]*v1.Upstream, error) {
+func ListUpstream() ([]*v1.Upstream, error) {
 	url := conf.BaseUrl + "/upstreams"
 	ret, _ := Get(url)
 	var upstreamsResponse UpstreamsResponse
@@ -31,8 +31,8 @@ func ListUpstream () ([]*v1.Upstream, error) {
 	}
 }
 
-func IsExist(name string) (bool, error){
-	if upstreams, err := ListUpstream (); err != nil {
+func IsExist(name string) (bool, error) {
+	if upstreams, err := ListUpstream(); err != nil {
 		return false, err
 	} else {
 		for _, upstream := range upstreams {
@@ -44,22 +44,21 @@ func IsExist(name string) (bool, error){
 	}
 }
 
-
-func AddUpstream(upstream *v1.Upstream, baseUrl string) (*UpstreamResponse, error){
+func AddUpstream(upstream *v1.Upstream, baseUrl string) (*UpstreamResponse, error) {
 	url := fmt.Sprintf("%s/upstreams", baseUrl)
 	glog.Info(url)
 	ur := convert2UpstreamRequest(upstream)
 	if b, err := json.Marshal(ur); err != nil {
 		return nil, err
-	}else {
+	} else {
 		if res, err := utils.Post(url, b); err != nil {
 			return nil, err
-		}else {
+		} else {
 			var uRes UpstreamResponse
 			if err = json.Unmarshal(res, &uRes); err != nil {
 				glog.Errorf("json Unmarshal error: %s", err.Error())
 				return nil, err
-			}else {
+			} else {
 				glog.Info(uRes)
 				return &uRes, nil
 			}
@@ -67,37 +66,39 @@ func AddUpstream(upstream *v1.Upstream, baseUrl string) (*UpstreamResponse, erro
 	}
 }
 
-func UpdateUpstream(upstream *v1.Upstream) error{
+func UpdateUpstream(upstream *v1.Upstream) error {
 	url := fmt.Sprintf("%s/upstreams/%s", conf.BaseUrl, *upstream.ID)
 	ur := convert2UpstreamRequest(upstream)
 	if b, err := json.Marshal(ur); err != nil {
 		return err
-	}else {
+	} else {
 		if _, err := utils.Patch(url, b); err != nil {
 			return err
-		}else {
+		} else {
 			return nil
 		}
 	}
 }
 
-func convert2UpstreamRequest(upstream *v1.Upstream) *UpstreamRequest{
+func convert2UpstreamRequest(upstream *v1.Upstream) *UpstreamRequest {
 	nodes := make(map[string]int64)
 	for _, u := range upstream.Nodes {
-		nodes[*u.IP + ":" + strconv.Itoa(*u.Port)] = int64(*u.Weight)
+		nodes[*u.IP+":"+strconv.Itoa(*u.Port)] = int64(*u.Weight)
 	}
 	return &UpstreamRequest{
 		LBType: *upstream.Type,
-		Desc: *upstream.Name,
-		Nodes: nodes,
+		HashOn: upstream.HashOn,
+		Key:    upstream.Key,
+		Desc:   *upstream.Name,
+		Nodes:  nodes,
 	}
 }
 
 // convert convert Upstream from etcd to v1.Upstream
-func (u *Upstream)convert() (*v1.Upstream, error){
+func (u *Upstream) convert() (*v1.Upstream, error) {
 	// id
 	keys := strings.Split(*u.Key, "/")
-	id := keys[len(keys) - 1]
+	id := keys[len(keys)-1]
 	// Name
 	name := u.UpstreamNodes.Desc
 	// type
@@ -123,29 +124,31 @@ type UpstreamsResponse struct {
 }
 
 type UpstreamResponse struct {
-	Action string `json:"action"`
+	Action   string   `json:"action"`
 	Upstream Upstream `json:"node"`
 }
 
-type Upstreams struct{
-	Key string `json:"key"` // 用来定位upstreams 列表
+type Upstreams struct {
+	Key       string     `json:"key"` // 用来定位upstreams 列表
 	Upstreams []Upstream `json:"nodes"`
 }
 
 type Upstream struct {
-	Key *string `json:"key"` // upstream key
+	Key           *string       `json:"key"` // upstream key
 	UpstreamNodes UpstreamNodes `json:"value"`
 }
 
 type UpstreamNodes struct {
-	Nodes map[string]int64 `json:"nodes"`
-	Desc *string `json:"desc"` // upstream name  = k8s svc
-	LBType *string `json:"type"` // 负载均衡类型
+	Nodes  map[string]int64 `json:"nodes"`
+	Desc   *string          `json:"desc"` // upstream name  = k8s svc
+	LBType *string          `json:"type"` // 负载均衡类型
 }
 
 //{"type":"roundrobin","nodes":{"10.244.10.11:8080":100},"desc":"somesvc"}
 type UpstreamRequest struct {
-	LBType string `json:"type"`
-	Nodes map[string]int64 `json:"nodes"`
-	Desc string `json:"desc"`
+	LBType string           `json:"type"`
+	HashOn *string          `json:"hash_on,omitempty"`
+	Key    *string          `json:"key,omitempty"`
+	Nodes  map[string]int64 `json:"nodes"`
+	Desc   string           `json:"desc"`
 }

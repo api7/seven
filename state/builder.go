@@ -12,26 +12,22 @@ import (
 )
 
 
+const ApisixUpstream = "ApisixUpstream"
 
-// ListFromApisix list all object from apisix
-func ListFromApisix(){
-
-}
-
-// InitDB insert object into memDB first time
-func InitDB(){
-	routes, _ := apisix.ListRoute()
-	upstreams, _ := apisix.ListUpstream()
-	apisix.InsertRoute(routes)
-	apisix.InsertUpstreams(upstreams)
-}
-
-// LoadTargetState load targetState from ... maybe k8s CRD
-func LoadTargetState(routes []*v1.Route, upstreams []*v1.Upstream){
-
-	// 1.diff
-	// 2.send event
-}
+//// InitDB insert object into memDB first time
+//func InitDB(){
+//	routes, _ := apisix.ListRoute()
+//	upstreams, _ := apisix.ListUpstream()
+//	apisix.InsertRoute(routes)
+//	apisix.InsertUpstreams(upstreams)
+//}
+//
+//// LoadTargetState load targetState from ... maybe k8s CRD
+//func LoadTargetState(routes []*v1.Route, upstreams []*v1.Upstream){
+//
+//	// 1.diff
+//	// 2.send event
+//}
 
 // paddingRoute padding route from memDB
 func paddingRoute(route *v1.Route, currentRoute *v1.Route){
@@ -158,13 +154,24 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 			if hasDiff {
 				if *u.ID != strconv.Itoa(0) {
 					op = Update
-					// 1.sync memDB
-					upstreamDB := &DB.UpstreamDB{u}
-					if err := upstreamDB.UpdateUpstream(); err != nil {
-						// todo log error
+					// 0.field check
+					needToUpdate := true
+					if currentUpstream.FromKind != nil && *(currentUpstream.FromKind) == ApisixUpstream { // update from ApisixUpstream
+						if u.FromKind == nil || (u.FromKind != nil && *(u.FromKind) != ApisixUpstream) {
+							// currentUpstream > u
+							// set lb && health check
+							needToUpdate = false
+						}
 					}
-					// 2.sync apisix
-					apisix.UpdateUpstream(u)
+					if needToUpdate{
+						// 1.sync memDB
+						upstreamDB := &DB.UpstreamDB{u}
+						if err := upstreamDB.UpdateUpstream(); err != nil {
+							// todo log error
+						}
+						// 2.sync apisix
+						apisix.UpdateUpstream(u)
+					}
 				} else {
 					op = Create
 					// 1.sync apisix and get response
