@@ -3,6 +3,7 @@ package DB
 import (
 	"github.com/hashicorp/go-memdb"
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
+	"fmt"
 )
 
 const (
@@ -19,8 +20,11 @@ func (rr *RouteRequest) FindByName() (*v1.Route, error){
 	if raw, err := txn.First(Route, "name", rr.Name); err != nil {
 		return nil, err
 	} else {
-		currentRoute := raw.(*v1.Route)
-		return currentRoute, nil
+		if raw != nil {
+			currentRoute := raw.(*v1.Route)
+			return currentRoute, nil
+		}
+		return nil, fmt.Errorf("NOT FOUND")
 	}
 }
 

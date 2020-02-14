@@ -3,6 +3,7 @@ package DB
 import (
 	"github.com/hashicorp/go-memdb"
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
+	"fmt"
 )
 
 const (
@@ -19,8 +20,11 @@ func (sr *ServiceRequest) FindByName() (*v1.Service, error){
 	if raw, err := txn.First(Service, "name", sr.Name); err != nil {
 		return nil, err
 	} else {
-		currentService := raw.(*v1.Service)
-		return currentService, nil
+		if raw != nil {
+			currentService := raw.(*v1.Service)
+			return currentService, nil
+		}
+		return nil, fmt.Errorf("NOT FOUND")
 	}
 }
 

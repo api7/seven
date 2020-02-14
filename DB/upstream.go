@@ -3,6 +3,7 @@ package DB
 import (
 	"github.com/hashicorp/go-memdb"
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
+	"fmt"
 )
 
 const (
@@ -23,8 +24,11 @@ func (ur *UpstreamRequest) FindByName() (*v1.Upstream, error){
 	if raw, err := txn.First(Upstream, "name", ur.Name); err != nil {
 		return nil, err
 	} else {
-		currentUpstream := raw.(*v1.Upstream)
-		return currentUpstream, nil
+		if raw != nil {
+			currentUpstream := raw.(*v1.Upstream)
+			return currentUpstream, nil
+		}
+		return nil, fmt.Errorf("NOT FOUND")
 	}
 }
 
