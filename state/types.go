@@ -88,7 +88,7 @@ func (w *serviceWorker) trigger(event Event, rwg *RouteWorkerGroup) error {
 
 	op := Update
 	// padding
-	currentRoute, _ := apisix.FindServiceByName(*w.Service.Name)
+	currentRoute, _ := apisix.FindCurrentService(*w.Service.Name)
 	paddingService(w.Service, currentRoute)
 	// diff
 	hasDiff, err := utils.HasDiff(w.Service, currentRoute)

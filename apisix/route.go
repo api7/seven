@@ -7,7 +7,34 @@ import (
 	"github.com/gxthrj/seven/utils"
 	"strings"
 	"github.com/gxthrj/seven/conf"
+	"github.com/gxthrj/seven/DB"
 )
+
+// FindCurrentRoute find current route in memDB
+func FindCurrentRoute(route *v1.Route) (*v1.Route,error){
+	db := &DB.RouteRequest{Name: *(route.Name)}
+	currentRoute, _ := db.FindByName()
+	if currentRoute != nil {
+		return currentRoute, nil
+	} else {
+		// find from apisix
+		if routes, err := ListRoute(); err != nil {
+			// todo log error
+		} else {
+			for _, r := range routes {
+				if r.Name !=nil && *r.Name == *route.Name {
+					// insert to memDB
+					db := &DB.RouteDB{Routes: []*v1.Route{r}}
+					db.Insert()
+					// return
+					return r, nil
+				}
+			}
+		}
+
+	}
+	return nil, fmt.Errorf("NOT FOUND")
+}
 
 // ListRoute list route from etcd , convert to v1.Route
 func ListRoute() ([]*v1.Route, error) {

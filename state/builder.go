@@ -87,7 +87,7 @@ func (r *routeWorker) trigger(event Event) error{
 	glog.Infof("trigger routeWorker %s from %s, %s", *r.Name, event.Op, *service.Name)
 
 	// padding
-	currentRoute, _ := apisix.FindRoute(r.Route)
+	currentRoute, _ := apisix.FindCurrentRoute(r.Route)
 	paddingRoute(r.Route, currentRoute)
 	// diff
 	hasDiff, err := utils.HasDiff(r.Route, currentRoute)
@@ -146,7 +146,7 @@ func NewServiceWorkers(services []*v1.Service, rwg *RouteWorkerGroup) ServiceWor
 func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 	for _, u := range upstreams {
 		op := Update
-		if currentUpstream, err := apisix.FindUpstreamByName(*u.Name); err != nil {
+		if currentUpstream, err := apisix.FindCurrentUpstream(*u.Name); err != nil {
 			// todo log error
 		} else {
 			paddingUpstream(u, currentUpstream)

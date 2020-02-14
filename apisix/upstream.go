@@ -9,7 +9,36 @@ import (
 	"github.com/gxthrj/seven/utils"
 	"strconv"
 	"strings"
+	"github.com/gxthrj/seven/DB"
 )
+
+// FindCurrentUpstream find upstream from memDB,
+// if Not Found, find upstream from apisix
+func FindCurrentUpstream(name string) (*v1.Upstream, error){
+	ur := &DB.UpstreamRequest{Name: name}
+	currentUpstream, _ := ur.FindByName()
+	if currentUpstream != nil {
+		return currentUpstream, nil
+	} else {
+		// find upstream from apisix
+		if upstreams, err := ListUpstream(); err != nil {
+			// todo log error
+		}else {
+			for _, upstream := range upstreams {
+				if upstream.Name != nil && *(upstream.Name) == name {
+					// and save to memDB
+					upstreamDB := &DB.UpstreamDB{Upstreams: []*v1.Upstream{upstream}}
+					upstreamDB.InsertUpstreams()
+					//InsertUpstreams([]*v1.Upstream{upstream})
+					// return
+					return upstream, nil
+				}
+			}
+		}
+
+	}
+	return nil, nil
+}
 
 // ListUpstream list upstream from etcd , convert to v1.Upstream
 func ListUpstream() ([]*v1.Upstream, error) {

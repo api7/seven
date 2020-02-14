@@ -7,7 +7,36 @@ import (
 	"github.com/gxthrj/seven/utils"
 	"github.com/golang/glog"
 	"strings"
+	"github.com/gxthrj/seven/DB"
+	"github.com/gxthrj/seven/conf"
 )
+
+// FindCurrentService find service from memDB,
+// if Not Found, find service from apisix
+func FindCurrentService(name string) (*v1.Service, error){
+	db := DB.ServiceRequest{Name: name}
+	currentService, _ := db.FindByName()
+	if currentService != nil {
+		return currentService, nil
+	}else {
+		// find service from apisix
+		if services, err := ListService(conf.BaseUrl); err != nil {
+			// todo log error
+			glog.Info(err.Error())
+		}else {
+			for _, s := range services {
+				if s.Name != nil && *(s.Name) == name {
+					// and save to memDB
+					db := &DB.ServiceDB{Services: []*v1.Service{s}}
+					db.Insert()
+					// return
+					return s, nil
+				}
+			}
+		}
+	}
+	return nil, nil
+}
 
 // ListUpstream list upstream from etcd , convert to v1.Upstream
 func ListService (baseUrl string) ([]*v1.Service, error) {
