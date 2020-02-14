@@ -107,7 +107,7 @@ func (r *routeWorker) trigger(event Event) error{
 func (r *routeWorker) sync(){
 	if *r.Route.ID != strconv.Itoa(0) {
 		// 1. sync memDB
-		db := &DB.RouteDB{r.Route}
+		db := &DB.RouteDB{Routes: []*v1.Route{r.Route}}
 		if err := db.UpdateRoute(); err != nil {
 			// todo log error
 		}
@@ -124,7 +124,8 @@ func (r *routeWorker) sync(){
 			*r.ID = tmp[len(tmp) - 1]
 		}
 		// 2. sync memDB
-		apisix.InsertRoute([]*v1.Route{r.Route})
+		db := &DB.RouteDB{Routes: []*v1.Route{r.Route}}
+		db.Insert()
 		glog.Info("create route %s, %s", r.Name, r.ServiceId)
 	}
 }

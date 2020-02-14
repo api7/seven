@@ -9,20 +9,50 @@ const (
 	Route = "Route"
 )
 
+type RouteRequest struct {
+	Name string
+}
+
+func (rr *RouteRequest) FindByName() (*v1.Route, error){
+	txn := DB.Txn(false)
+	defer txn.Abort()
+	if raw, err := txn.First(Route, "name", rr.Name); err != nil {
+		return nil, err
+	} else {
+		currentRoute := raw.(*v1.Route)
+		return currentRoute, nil
+	}
+}
+
 type RouteDB struct {
-	Route *v1.Route
+	Routes []*v1.Route
+}
+
+// InsertRoute insert route to memDB
+func (db *RouteDB) Insert() error{
+	txn := DB.Txn(true)
+	defer txn.Abort()
+	for _, r := range db.Routes {
+		if err := txn.Insert(Route, r); err != nil {
+			return err
+		}
+	}
+	txn.Commit()
+	return nil
 }
 
 func (db *RouteDB) UpdateRoute() error{
 	txn := DB.Txn(true)
 	defer txn.Abort()
-	// 1. delete
-	if _, err := txn.DeleteAll(Route, "id", db.Route.ID); err != nil {
-		return err
-	}
-	// 2. insert
-	if err := txn.Insert(Route, db.Route); err != nil {
-		return err
+	for _, r := range db.Routes {
+		// 1. delete
+		if _, err := txn.DeleteAll(Route, "id", r.ID); err != nil {
+			return err
+		}
+		// 2. insert
+		if err := txn.Insert(Route, r); err != nil {
+			return err
+		}
 	}
 	txn.Commit()
 	return nil

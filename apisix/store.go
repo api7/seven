@@ -10,25 +10,11 @@ import (
 
 
 
-// InsertRoute insert route to memDB
-func InsertRoute(routes []*v1.Route) error{
-	txn := DB.DB.Txn(true)
-	defer txn.Abort()
-	for _, r := range routes {
-		if err := txn.Insert(DB.Route, r); err != nil {
-			return err
-		}
-	}
-	txn.Commit()
-	return nil
-}
 // FindRoute find current route in memDB
 func FindRoute(route *v1.Route) (*v1.Route,error){
-	txn := DB.DB.Txn(false)
-	defer txn.Abort()
-	raw, _ := txn.First(DB.Route, "name", route.Name)
-	if raw != nil { // update
-		currentRoute := raw.(*v1.Route)
+	db := &DB.RouteRequest{Name: *(route.Name)}
+	currentRoute, _ := db.FindByName()
+	if currentRoute != nil {
 		return currentRoute, nil
 	} else {
 		// find from apisix
@@ -38,7 +24,8 @@ func FindRoute(route *v1.Route) (*v1.Route,error){
 			for _, r := range routes {
 				if r.Name !=nil && *r.Name == *route.Name {
 					// insert to memDB
-					InsertRoute([]*v1.Route{r})
+					db := &DB.RouteDB{Routes: []*v1.Route{r}}
+					db.Insert()
 					// return
 					return r, nil
 				}
