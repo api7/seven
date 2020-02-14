@@ -108,12 +108,13 @@ func (w *serviceWorker) trigger(event Event, rwg *RouteWorkerGroup) error {
 				*w.Service.ID = tmp[len(tmp) - 1]
 			}
 			// 2. sync memDB
-			apisix.InsertServices([]*v1.Service{w.Service})
+			db := &DB.ServiceDB{Services: []*v1.Service{w.Service}}
+			db.Insert()
 			glog.Infof("create service %s, %s", *w.Name, *w.UpstreamId)
 		}else {
 			op = Update
 			// 1. sync memDB
-			db := DB.ServiceDB{w.Service}
+			db := DB.ServiceDB{Services: []*v1.Service{w.Service}}
 			if err := db.UpdateService(); err != nil {
 				// todo log error
 			}

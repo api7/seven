@@ -8,30 +8,6 @@ import (
 	"github.com/golang/glog"
 )
 
-// insertUpstream insert upstream to memDB
-//func InsertUpstreams(upstreams []*v1.Upstream) error{
-//	txn := DB.DB.Txn(true)
-//	defer txn.Abort()
-//	for _, u := range upstreams{
-//		if err := txn.Insert(DB.Upstream, u); err != nil {
-//			return err
-//		}
-//	}
-//	txn.Commit()
-//	return nil
-//}
-
-func InsertServices(services []*v1.Service) error {
-	txn := DB.DB.Txn(true)
-	defer txn.Abort()
-	for _, s := range services {
-		if err := txn.Insert(DB.Service, s); err != nil {
-			return err
-		}
-	}
-	txn.Commit()
-	return nil
-}
 
 
 // InsertRoute insert route to memDB
@@ -76,7 +52,7 @@ func FindRoute(route *v1.Route) (*v1.Route,error){
 // if Not Found, find upstream from apisix
 func FindUpstreamByName(name string) (*v1.Upstream, error){
 	ur := &DB.UpstreamRequest{Name: name}
-	currentUpstream, _ := ur.FindUpstreamByName()
+	currentUpstream, _ := ur.FindByName()
 	if currentUpstream != nil {
 		return currentUpstream, nil
 	} else {
@@ -103,11 +79,9 @@ func FindUpstreamByName(name string) (*v1.Upstream, error){
 // FindServiceByName find service from memDB,
 // if Not Found, find service from apisix
 func FindServiceByName(name string) (*v1.Service, error){
-	txn := DB.DB.Txn(false)
-	defer txn.Abort()
-	raw, _ := txn.First(DB.Service, "name", name)
-	if raw != nil {
-		currentService := raw.(*v1.Service)
+	db := DB.ServiceRequest{Name: name}
+	currentService, _ := db.FindByName()
+	if currentService != nil {
 		return currentService, nil
 	}else {
 		// find service from apisix
@@ -118,7 +92,8 @@ func FindServiceByName(name string) (*v1.Service, error){
 			for _, s := range services {
 				if s.Name != nil && *(s.Name) == name {
 					// and save to memDB
-					InsertServices([]*v1.Service{s})
+					db := &DB.ServiceDB{Services: []*v1.Service{s}}
+					db.Insert()
 					// return
 					return s, nil
 				}

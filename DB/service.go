@@ -9,21 +9,51 @@ const (
 	Service = "Service"
 )
 
+type ServiceRequest struct {
+	Name string
+}
+
+func (sr *ServiceRequest) FindByName() (*v1.Service, error){
+	txn := DB.Txn(false)
+	defer txn.Abort()
+	if raw, err := txn.First(Service, "name", sr.Name); err != nil {
+		return nil, err
+	} else {
+		currentService := raw.(*v1.Service)
+		return currentService, nil
+	}
+}
+
+func (db *ServiceDB) Insert() error {
+	txn := DB.Txn(true)
+	defer txn.Abort()
+	for _, s := range db.Services {
+		if err := txn.Insert(Service, s); err != nil {
+			return err
+		}
+	}
+	txn.Commit()
+	return nil
+}
+
 type ServiceDB struct {
-	Service *v1.Service
+	Services []*v1.Service
 }
 
 func (db *ServiceDB) UpdateService() error{
 	txn := DB.Txn(true)
 	defer txn.Abort()
-	// 1. delete
-	if _, err := txn.DeleteAll(Service, "id", db.Service.ID); err != nil {
-		return err
+	for _, s := range db.Services {
+		// 1. delete
+		if _, err := txn.DeleteAll(Service, "id", s.ID); err != nil {
+			return err
+		}
+		// 2. insert
+		if err := txn.Insert(Service, s); err != nil {
+			return err
+		}
 	}
-	// 2. insert
-	if err := txn.Insert(Service, db.Service); err != nil {
-		return err
-	}
+
 	txn.Commit()
 	return nil
 }

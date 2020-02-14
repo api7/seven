@@ -17,7 +17,7 @@ type UpstreamRequest struct {
 	Name string
 }
 
-func (ur *UpstreamRequest) FindUpstreamByName() (*v1.Upstream, error){
+func (ur *UpstreamRequest) FindByName() (*v1.Upstream, error){
 	txn := DB.Txn(false)
 	defer txn.Abort()
 	if raw, err := txn.First(Upstream, "name", ur.Name); err != nil {
