@@ -89,7 +89,12 @@ func AddService(service *v1.Service, baseUrl string) (*ServiceResponse, error) {
 			if err = json.Unmarshal(res, &uRes); err != nil {
 				return nil, err
 			} else {
-				return &uRes, nil
+				if uRes.Service.Key != nil {
+					return &uRes, nil
+				} else {
+					return nil, fmt.Errorf("apisix service not expected response")
+				}
+
 			}
 		}
 	}

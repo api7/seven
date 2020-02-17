@@ -69,7 +69,12 @@ func AddRoute(route *v1.Route, baseUrl string) (*RouteResponse, error) {
 			if err = json.Unmarshal(res, &routeResp); err != nil {
 				return nil, err
 			} else {
-				return &routeResp, nil
+				if routeResp.Route.Key != nil {
+					return &routeResp, nil
+				} else {
+					return nil, fmt.Errorf("apisix route not expected response")
+				}
+
 			}
 		}
 	}

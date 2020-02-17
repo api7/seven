@@ -89,7 +89,11 @@ func AddUpstream(upstream *v1.Upstream, baseUrl string) (*UpstreamResponse, erro
 				return nil, err
 			} else {
 				glog.Info(uRes)
-				return &uRes, nil
+				if uRes.Upstream.Key != nil {
+					return &uRes, nil
+				} else {
+					return nil, fmt.Errorf("apisix upstream not expected response")
+				}
 			}
 		}
 	}
