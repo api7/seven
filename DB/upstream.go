@@ -50,7 +50,7 @@ func (upstreamDB *UpstreamDB) UpdateUpstreams() error {
 	defer txn.Abort()
 	for _, u := range upstreamDB.Upstreams {
 		// delete
-		if _, err := txn.DeleteAll(Upstream, "id", u.ID); err != nil {
+		if _, err := txn.DeleteAll(Upstream, "id", *(u.ID)); err != nil {
 			return err
 		}
 		// insert

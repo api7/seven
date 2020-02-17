@@ -49,7 +49,7 @@ func (db *ServiceDB) UpdateService() error{
 	defer txn.Abort()
 	for _, s := range db.Services {
 		// 1. delete
-		if _, err := txn.DeleteAll(Service, "id", s.ID); err != nil {
+		if _, err := txn.DeleteAll(Service, "id", *(s.ID)); err != nil {
 			return err
 		}
 		// 2. insert

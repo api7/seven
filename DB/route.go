@@ -50,7 +50,7 @@ func (db *RouteDB) UpdateRoute() error{
 	defer txn.Abort()
 	for _, r := range db.Routes {
 		// 1. delete
-		if _, err := txn.DeleteAll(Route, "id", r.ID); err != nil {
+		if _, err := txn.DeleteAll(Route, "id", *(r.ID)); err != nil {
 			return err
 		}
 		// 2. insert
