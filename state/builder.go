@@ -169,9 +169,12 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 						upstreamDB := &DB.UpstreamDB{Upstreams: []*v1.Upstream{u}}
 						if err := upstreamDB.UpdateUpstreams(); err != nil {
 							// todo log error
+							glog.Errorf(err.Error())
 						}
 						// 2.sync apisix
-						apisix.UpdateUpstream(u)
+						if err = apisix.UpdateUpstream(u); err != nil {
+							glog.Errorf(err.Error())
+						}
 					}
 				} else {
 					op = Create
