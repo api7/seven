@@ -113,7 +113,7 @@ func (r *routeWorker) sync(){
 		}
 		// 2. sync apisix
 		apisix.UpdateRoute(r.Route, conf.BaseUrl)
-		glog.Info("update route %s, %s", r.Name, r.ServiceId)
+		glog.Infof("update route %s, %s", *r.Name, *r.ServiceId)
 	} else {
 		// 1. sync apisix and get id
 		if res, err := apisix.AddRoute(r.Route, conf.BaseUrl); err != nil {
@@ -126,7 +126,7 @@ func (r *routeWorker) sync(){
 		// 2. sync memDB
 		db := &DB.RouteDB{Routes: []*v1.Route{r.Route}}
 		db.Insert()
-		glog.Info("create route %s, %s", r.Name, r.ServiceId)
+		glog.Infof("create route %s, %s", *r.Name, *r.ServiceId)
 	}
 }
 

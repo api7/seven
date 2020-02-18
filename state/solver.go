@@ -1,6 +1,10 @@
 package state
 
-import "github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
+import (
+	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
+	"github.com/gxthrj/seven/apisix"
+	"github.com/gxthrj/seven/DB"
+)
 
 var UpstreamQueue chan UpstreamQueueObj
 var ServiceQueue chan ServiceQueueObj
@@ -61,4 +65,32 @@ type ServiceQueueObj struct {
 // upstreams is group by CRD
 func (sqo *ServiceQueueObj) AddQueue(){
 	ServiceQueue <- *sqo
+}
+
+// Sync remove from apisix
+func (rc *RouteCompare) Sync() error{
+	for _, old := range rc.OldRoutes{
+		needToDel := true
+		for _, nr := range rc.NewRoutes {
+			if old.Name == nr.Name {
+				needToDel = false
+				break
+			}
+		}
+		if needToDel {
+			request := DB.RouteRequest{Name: *old.Name}
+
+			if route, err := request.FindByName(); err != nil {
+				// log error
+			}else {
+				if err = apisix.DeleteRoute(route); err == nil {
+					db := DB.RouteDB{Routes: []*v1.Route{route}}
+					db.DeleteRoute()
+				}
+
+			}
+
+		}
+	}
+	return nil
 }

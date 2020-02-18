@@ -94,6 +94,15 @@ func UpdateRoute(route *v1.Route, baseUrl string) error {
 	}
 }
 
+func DeleteRoute(route *v1.Route) error {
+	url := fmt.Sprintf("%s/routes/%s", conf.BaseUrl, *route.ID)
+	if _, err := utils.Delete(url); err != nil {
+		return err
+	} else {
+		return nil
+	}
+}
+
 type Redirect struct {
 	RetCode int64 `json:"ret_code"`
 	Uri string `json:"uri"`

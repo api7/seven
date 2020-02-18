@@ -10,6 +10,11 @@ type ApisixCombination struct {
 	Upstreams []*v1.Upstream
 }
 
+type RouteCompare struct {
+	OldRoutes []*v1.Route
+	NewRoutes []*v1.Route
+}
+
 type Quit struct {
 	Name string
 }

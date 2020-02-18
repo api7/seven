@@ -62,6 +62,18 @@ func (db *RouteDB) UpdateRoute() error{
 	return nil
 }
 
+func (db *RouteDB) DeleteRoute() error {
+	txn := DB.Txn(true)
+	defer txn.Abort()
+	for _, r := range db.Routes {
+		if _, err := txn.DeleteAll(Route, "id", *(r.ID)); err != nil {
+			return err
+		}
+	}
+	txn.Commit()
+	return nil
+}
+
 var routeSchema = &memdb.TableSchema{
 	Name: Route,
 	Indexes: map[string]*memdb.IndexSchema{

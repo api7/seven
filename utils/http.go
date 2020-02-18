@@ -32,3 +32,15 @@ func Patch(url string, bytes []byte) ([]byte, error){
 	}
 	return resp.Body(), nil
 }
+
+func Delete(url string) ([]byte, error) {
+	r := resty.New().
+		SetTimeout(time.Duration(timeout) * time.Millisecond).
+		R().
+		SetHeader("content-type", "application/json")
+	resp, err := r.Delete(url)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Body(), nil
+}
