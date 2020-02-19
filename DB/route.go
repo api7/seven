@@ -11,13 +11,14 @@ const (
 )
 
 type RouteRequest struct {
+	Group string
 	Name string
 }
 
 func (rr *RouteRequest) FindByName() (*v1.Route, error){
 	txn := DB.Txn(false)
 	defer txn.Abort()
-	if raw, err := txn.First(Route, "name", rr.Name); err != nil {
+	if raw, err := txn.First(Route, "name", rr.Group, rr.Name); err != nil {
 		return nil, err
 	} else {
 		if raw != nil {
@@ -50,7 +51,7 @@ func (db *RouteDB) UpdateRoute() error{
 	defer txn.Abort()
 	for _, r := range db.Routes {
 		// 1. delete
-		if _, err := txn.DeleteAll(Route, "id", *(r.ID)); err != nil {
+		if _, err := txn.DeleteAll(Route, "name", *(r.Group), *(r.Name)); err != nil {
 			return err
 		}
 		// 2. insert
@@ -66,7 +67,8 @@ func (db *RouteDB) DeleteRoute() error {
 	txn := DB.Txn(true)
 	defer txn.Abort()
 	for _, r := range db.Routes {
-		if _, err := txn.DeleteAll(Route, "id", *(r.ID)); err != nil {
+		//if _, err := txn.DeleteAll(Route, "id", *(r.ID)); err != nil {
+		if _, err := txn.DeleteAll(Route, "name", *(r.Group), *(r.Name)); err != nil {
 			return err
 		}
 	}
@@ -77,15 +79,10 @@ func (db *RouteDB) DeleteRoute() error {
 var routeSchema = &memdb.TableSchema{
 	Name: Route,
 	Indexes: map[string]*memdb.IndexSchema{
-		"id": {
-			Name:    "id",
-			Unique:  true,
-			Indexer: &memdb.StringFieldIndex{Field: "ID"},
-		},
 		"name": {
 			Name:         "name",
 			Unique:       true,
-			Indexer:      &memdb.StringFieldIndex{Field: "Name"},
+			Indexer:      indexer(),
 			AllowMissing: true,
 		},
 	},

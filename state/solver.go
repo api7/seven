@@ -87,9 +87,7 @@ func (rc *RouteCompare) Sync() error{
 					db := DB.RouteDB{Routes: []*v1.Route{route}}
 					db.DeleteRoute()
 				}
-
 			}
-
 		}
 	}
 	return nil

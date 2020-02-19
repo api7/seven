@@ -7,7 +7,6 @@ import (
 	"github.com/gxthrj/seven/utils"
 	"strings"
 	"github.com/gxthrj/seven/DB"
-	"github.com/gxthrj/seven/conf"
 	"github.com/golang/glog"
 )
 
@@ -112,11 +111,11 @@ func (r *routeWorker) sync(){
 			// todo log error
 		}
 		// 2. sync apisix
-		apisix.UpdateRoute(r.Route, conf.BaseUrl)
+		apisix.UpdateRoute(r.Route)
 		glog.Infof("update route %s, %s", *r.Name, *r.ServiceId)
 	} else {
 		// 1. sync apisix and get id
-		if res, err := apisix.AddRoute(r.Route, conf.BaseUrl); err != nil {
+		if res, err := apisix.AddRoute(r.Route); err != nil {
 			// todo log error
 		} else {
 			key := res.Route.Key
@@ -146,7 +145,7 @@ func NewServiceWorkers(services []*v1.Service, rwg *RouteWorkerGroup) ServiceWor
 func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 	for _, u := range upstreams {
 		op := Update
-		if currentUpstream, err := apisix.FindCurrentUpstream(*u.Name); err != nil {
+		if currentUpstream, err := apisix.FindCurrentUpstream(*u.Group, *u.Name); err != nil {
 			// todo log error
 		} else {
 			paddingUpstream(u, currentUpstream)
@@ -179,7 +178,7 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 				} else {
 					op = Create
 					// 1.sync apisix and get response
-					if upstreamResponse, err := apisix.AddUpstream(u, conf.BaseUrl); err != nil {
+					if upstreamResponse, err := apisix.AddUpstream(u); err != nil {
 						// todo log error
 					}else {
 						tmp := strings.Split(*upstreamResponse.Upstream.Key, "/")

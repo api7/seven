@@ -18,7 +18,7 @@ func FindCurrentRoute(route *v1.Route) (*v1.Route,error){
 		return currentRoute, nil
 	} else {
 		// find from apisix
-		if routes, err := ListRoute(); err != nil {
+		if routes, err := ListRoute(*route.Group); err != nil {
 			// todo log error
 		} else {
 			for _, r := range routes {
@@ -37,8 +37,9 @@ func FindCurrentRoute(route *v1.Route) (*v1.Route,error){
 }
 
 // ListRoute list route from etcd , convert to v1.Route
-func ListRoute() ([]*v1.Route, error) {
-	url := conf.BaseUrl + "/routes"
+func ListRoute(group string) ([]*v1.Route, error) {
+	baseUrl := conf.FindUrl(group)
+	url := baseUrl + "/routes"
 	ret, _ := Get(url)
 	var routesResponse RoutesResponse
 	if err := json.Unmarshal(ret, &routesResponse); err != nil {
@@ -56,7 +57,8 @@ func ListRoute() ([]*v1.Route, error) {
 	}
 }
 
-func AddRoute(route *v1.Route, baseUrl string) (*RouteResponse, error) {
+func AddRoute(route *v1.Route) (*RouteResponse, error) {
+	baseUrl := conf.FindUrl(*route.Group)
 	url := fmt.Sprintf("%s/routes", baseUrl)
 	rr := convert2RouteRequest(route)
 	if b, err := json.Marshal(rr); err != nil {
@@ -80,7 +82,8 @@ func AddRoute(route *v1.Route, baseUrl string) (*RouteResponse, error) {
 	}
 }
 
-func UpdateRoute(route *v1.Route, baseUrl string) error {
+func UpdateRoute(route *v1.Route) error {
+	baseUrl := conf.FindUrl(*route.Group)
 	url := fmt.Sprintf("%s/routes/%s", baseUrl, *route.ID)
 	rr := convert2RouteRequest(route)
 	if b, err := json.Marshal(rr); err != nil {
@@ -95,7 +98,8 @@ func UpdateRoute(route *v1.Route, baseUrl string) error {
 }
 
 func DeleteRoute(route *v1.Route) error {
-	url := fmt.Sprintf("%s/routes/%s", conf.BaseUrl, *route.ID)
+	baseUrl := conf.FindUrl(*route.Group)
+	url := fmt.Sprintf("%s/routes/%s", baseUrl, *route.ID)
 	if _, err := utils.Delete(url); err != nil {
 		return err
 	} else {

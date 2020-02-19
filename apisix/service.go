@@ -13,14 +13,14 @@ import (
 
 // FindCurrentService find service from memDB,
 // if Not Found, find service from apisix
-func FindCurrentService(name string) (*v1.Service, error){
-	db := DB.ServiceRequest{Name: name}
+func FindCurrentService(group, name string) (*v1.Service, error){
+	db := DB.ServiceRequest{Group: group, Name: name}
 	currentService, _ := db.FindByName()
 	if currentService != nil {
 		return currentService, nil
 	}else {
 		// find service from apisix
-		if services, err := ListService(conf.BaseUrl); err != nil {
+		if services, err := ListService(group); err != nil {
 			// todo log error
 			glog.Info(err.Error())
 		}else {
@@ -39,7 +39,8 @@ func FindCurrentService(name string) (*v1.Service, error){
 }
 
 // ListUpstream list upstream from etcd , convert to v1.Upstream
-func ListService (baseUrl string) ([]*v1.Service, error) {
+func ListService (group string) ([]*v1.Service, error) {
+	baseUrl := conf.FindUrl(group)
 	url := baseUrl + "/services"
 	ret, _ := Get(url)
 	var servicesResponse ServicesResponse
@@ -76,7 +77,8 @@ func (u *Service)convert() (*v1.Service, error){
 	return &v1.Service{ID: &id, Name: name, UpstreamId: upstreamId, Plugins: plugins}, nil
 }
 
-func AddService(service *v1.Service, baseUrl string) (*ServiceResponse, error) {
+func AddService(service *v1.Service) (*ServiceResponse, error) {
+	baseUrl := conf.FindUrl(*service.Group)
 	url := fmt.Sprintf("%s/services", baseUrl)
 	ur := convert2ServiceRequest(service)
 	if b, err := json.Marshal(ur); err != nil {
@@ -100,7 +102,8 @@ func AddService(service *v1.Service, baseUrl string) (*ServiceResponse, error) {
 	}
 }
 
-func UpdateService(service *v1.Service, baseUrl string) (*ServiceResponse, error) {
+func UpdateService(service *v1.Service) (*ServiceResponse, error) {
+	baseUrl := conf.FindUrl(*service.Group)
 	url := fmt.Sprintf("%s/services/%s", baseUrl, *service.ID)
 	ur := convert2ServiceRequest(service)
 	if b, err := json.Marshal(ur); err != nil {

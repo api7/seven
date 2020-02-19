@@ -1,9 +1,9 @@
 package DB
 
 import (
-	"github.com/hashicorp/go-memdb"
-	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
 	"fmt"
+	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
+	"github.com/hashicorp/go-memdb"
 )
 
 const (
@@ -15,13 +15,14 @@ type UpstreamDB struct {
 }
 
 type UpstreamRequest struct {
-	Name string
+	Group string
+	Name  string
 }
 
-func (ur *UpstreamRequest) FindByName() (*v1.Upstream, error){
+func (ur *UpstreamRequest) FindByName() (*v1.Upstream, error) {
 	txn := DB.Txn(false)
 	defer txn.Abort()
-	if raw, err := txn.First(Upstream, "name", ur.Name); err != nil {
+	if raw, err := txn.First(Upstream, "name", ur.Group, ur.Name); err != nil {
 		return nil, err
 	} else {
 		if raw != nil {
@@ -33,10 +34,10 @@ func (ur *UpstreamRequest) FindByName() (*v1.Upstream, error){
 }
 
 // insertUpstream insert upstream to memDB
-func (upstreamDB *UpstreamDB) InsertUpstreams() error{
+func (upstreamDB *UpstreamDB) InsertUpstreams() error {
 	txn := DB.Txn(true)
 	defer txn.Abort()
-	for _, u := range upstreamDB.Upstreams{
+	for _, u := range upstreamDB.Upstreams {
 		if err := txn.Insert(Upstream, u); err != nil {
 			return err
 		}
@@ -50,7 +51,7 @@ func (upstreamDB *UpstreamDB) UpdateUpstreams() error {
 	defer txn.Abort()
 	for _, u := range upstreamDB.Upstreams {
 		// delete
-		if _, err := txn.DeleteAll(Upstream, "id", *(u.ID)); err != nil {
+		if _, err := txn.DeleteAll(Upstream, "name", *(u.Group), *(u.Name)); err != nil {
 			return err
 		}
 		// insert
@@ -62,19 +63,23 @@ func (upstreamDB *UpstreamDB) UpdateUpstreams() error {
 	return nil
 }
 
+
 var upstreamSchema = &memdb.TableSchema{
 	Name: Upstream,
 	Indexes: map[string]*memdb.IndexSchema{
-		"id": {
-			Name:    "id",
-			Unique:  true,
-			Indexer: &memdb.StringFieldIndex{Field: "ID"},
-		},
 		"name": {
 			Name:         "name",
 			Unique:       true,
-			Indexer:      &memdb.StringFieldIndex{Field: "Name"},
+			Indexer:      indexer(),
 			AllowMissing: true,
 		},
 	},
 }
+
+func indexer() *memdb.CompoundIndex{
+	var idx = make([]memdb.Indexer, 0)
+	idx = append(idx, &memdb.StringFieldIndex{Field: "Group"})
+	idx = append(idx, &memdb.StringFieldIndex{Field: "Name"})
+	return &memdb.CompoundIndex{Indexes: idx, AllowMissing: false}
+}
+

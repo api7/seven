@@ -14,14 +14,14 @@ import (
 
 // FindCurrentUpstream find upstream from memDB,
 // if Not Found, find upstream from apisix
-func FindCurrentUpstream(name string) (*v1.Upstream, error){
-	ur := &DB.UpstreamRequest{Name: name}
+func FindCurrentUpstream(group, name string) (*v1.Upstream, error){
+	ur := &DB.UpstreamRequest{Group: group, Name: name}
 	currentUpstream, _ := ur.FindByName()
 	if currentUpstream != nil {
 		return currentUpstream, nil
 	} else {
 		// find upstream from apisix
-		if upstreams, err := ListUpstream(); err != nil {
+		if upstreams, err := ListUpstream(group); err != nil {
 			// todo log error
 		}else {
 			for _, upstream := range upstreams {
@@ -41,8 +41,9 @@ func FindCurrentUpstream(name string) (*v1.Upstream, error){
 }
 
 // ListUpstream list upstream from etcd , convert to v1.Upstream
-func ListUpstream() ([]*v1.Upstream, error) {
-	url := conf.BaseUrl + "/upstreams"
+func ListUpstream(group string) ([]*v1.Upstream, error) {
+	baseUrl := conf.FindUrl(group)
+	url := baseUrl + "/upstreams"
 	ret, _ := Get(url)
 	var upstreamsResponse UpstreamsResponse
 	if err := json.Unmarshal(ret, &upstreamsResponse); err != nil {
@@ -50,7 +51,7 @@ func ListUpstream() ([]*v1.Upstream, error) {
 	} else {
 		upstreams := make([]*v1.Upstream, 0)
 		for _, u := range upstreamsResponse.Upstreams.Upstreams {
-			if n, err := u.convert(); err == nil {
+			if n, err := u.convert(group); err == nil {
 				upstreams = append(upstreams, n)
 			} else {
 				return nil, fmt.Errorf("upstream: %s 转换失败, %s", *u.UpstreamNodes.Desc, err.Error())
@@ -60,20 +61,21 @@ func ListUpstream() ([]*v1.Upstream, error) {
 	}
 }
 
-func IsExist(name string) (bool, error) {
-	if upstreams, err := ListUpstream(); err != nil {
-		return false, err
-	} else {
-		for _, upstream := range upstreams {
-			if *upstream.Name == name {
-				return true, nil
-			}
-		}
-		return false, nil
-	}
-}
+//func IsExist(name string) (bool, error) {
+//	if upstreams, err := ListUpstream(); err != nil {
+//		return false, err
+//	} else {
+//		for _, upstream := range upstreams {
+//			if *upstream.Name == name {
+//				return true, nil
+//			}
+//		}
+//		return false, nil
+//	}
+//}
 
-func AddUpstream(upstream *v1.Upstream, baseUrl string) (*UpstreamResponse, error) {
+func AddUpstream(upstream *v1.Upstream) (*UpstreamResponse, error) {
+	baseUrl := conf.FindUrl(*upstream.Group)
 	url := fmt.Sprintf("%s/upstreams", baseUrl)
 	glog.Info(url)
 	ur := convert2UpstreamRequest(upstream)
@@ -100,7 +102,8 @@ func AddUpstream(upstream *v1.Upstream, baseUrl string) (*UpstreamResponse, erro
 }
 
 func UpdateUpstream(upstream *v1.Upstream) error {
-	url := fmt.Sprintf("%s/upstreams/%s", conf.BaseUrl, *upstream.ID)
+	baseUrl := conf.FindUrl(*upstream.Group)
+	url := fmt.Sprintf("%s/upstreams/%s", baseUrl, *upstream.ID)
 	ur := convert2UpstreamRequest(upstream)
 	if b, err := json.Marshal(ur); err != nil {
 		return err
@@ -128,7 +131,7 @@ func convert2UpstreamRequest(upstream *v1.Upstream) *UpstreamRequest {
 }
 
 // convert convert Upstream from etcd to v1.Upstream
-func (u *Upstream) convert() (*v1.Upstream, error) {
+func (u *Upstream) convert(group string) (*v1.Upstream, error) {
 	// id
 	keys := strings.Split(*u.Key, "/")
 	id := keys[len(keys)-1]
@@ -149,7 +152,7 @@ func (u *Upstream) convert() (*v1.Upstream, error) {
 		nodes = append(nodes, node)
 	}
 
-	return &v1.Upstream{ID: &id, Name: name, Type: LBType, Key: key, Nodes: nodes}, nil
+	return &v1.Upstream{ID: &id, Group: &group, Name: name, Type: LBType, Key: key, Nodes: nodes}, nil
 }
 
 type UpstreamsResponse struct {

@@ -8,7 +8,6 @@ import (
 	"github.com/gxthrj/seven/apisix"
 	"github.com/gxthrj/seven/utils"
 	"strconv"
-	"github.com/gxthrj/seven/conf"
 )
 
 
@@ -103,7 +102,7 @@ func SolverService(services []*v1.Service, rwg RouteWorkerGroup) error{
 	for _, svc := range services {
 		op := Update
 		// padding
-		currentService, _ := apisix.FindCurrentService(*svc.Name)
+		currentService, _ := apisix.FindCurrentService(*svc.Group, *svc.Name)
 		paddingService(svc, currentService)
 		// diff
 		hasDiff, err := utils.HasDiff(svc, currentService)
@@ -115,7 +114,7 @@ func SolverService(services []*v1.Service, rwg RouteWorkerGroup) error{
 			if *svc.ID == strconv.Itoa(0) {
 				op = Create
 				// 1. sync apisix and get id
-				if serviceResponse, err := apisix.AddService(svc, conf.BaseUrl); err != nil {
+				if serviceResponse, err := apisix.AddService(svc); err != nil {
 					// todo log error
 					glog.Info(err.Error())
 				}else {
@@ -143,7 +142,7 @@ func SolverService(services []*v1.Service, rwg RouteWorkerGroup) error{
 						// todo log error
 					}
 					// 2. sync apisix
-					apisix.UpdateService(svc, conf.BaseUrl)
+					apisix.UpdateService(svc)
 					glog.Infof("update service %s, %s", *svc.Name, *svc.UpstreamId)
 				}
 
