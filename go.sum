@@ -18,6 +18,8 @@ github.com/gxthrj/apisix-types v0.0.9 h1:/DnilSdFEBdlKjCKoIfwks1SAY1kLEWiw2hUzCQ
 github.com/gxthrj/apisix-types v0.0.9/go.mod h1:STdHATWxqIeJhUEXt6dZTd6z0To0qO70K/1mnfBtlC0=
 github.com/gxthrj/apisix-types v0.0.10 h1:BsXHiCdDmIN7DuG9j6GQc/D97jFe0LEEk/PuUVHeiFI=
 github.com/gxthrj/apisix-types v0.0.10/go.mod h1:STdHATWxqIeJhUEXt6dZTd6z0To0qO70K/1mnfBtlC0=
+github.com/gxthrj/apisix-types v0.1.0 h1:ekfXEnpFk8cJFYIJew0bnlWSJkMYpYO+AUQLiusG7bU=
+github.com/gxthrj/apisix-types v0.1.0/go.mod h1:STdHATWxqIeJhUEXt6dZTd6z0To0qO70K/1mnfBtlC0=
 github.com/hashicorp/go-immutable-radix v1.1.0 h1:vN9wG1D6KG6YHRTWr8512cxGOVgTMEfgEdSj/hr8MPc=
 github.com/hashicorp/go-immutable-radix v1.1.0/go.mod h1:0y9vanUI8NX6FsYoO3zeMjhV/C5i9g4Q3DwcSNZ4P60=
 github.com/hashicorp/go-memdb v1.0.4 h1:sIdJHAEtV3//iXcUb4LumSQeorYos5V0ptvqvQvFgDA=
