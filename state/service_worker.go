@@ -102,7 +102,7 @@ func SolverService(services []*v1.Service, rwg RouteWorkerGroup) error{
 	for _, svc := range services {
 		op := Update
 		// padding
-		currentService, _ := apisix.FindCurrentService(*svc.Group, *svc.Name)
+		currentService, _ := apisix.FindCurrentService(*svc.Group, *svc.Name, *svc.FullName)
 		paddingService(svc, currentService)
 		// diff
 		hasDiff, err := utils.HasDiff(svc, currentService)

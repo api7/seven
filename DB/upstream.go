@@ -17,12 +17,13 @@ type UpstreamDB struct {
 type UpstreamRequest struct {
 	Group string
 	Name  string
+	FullName string
 }
 
 func (ur *UpstreamRequest) FindByName() (*v1.Upstream, error) {
 	txn := DB.Txn(false)
 	defer txn.Abort()
-	if raw, err := txn.First(Upstream, "name", ur.Group, ur.Name); err != nil {
+	if raw, err := txn.First(Upstream, "id", ur.FullName); err != nil {
 		return nil, err
 	} else {
 		if raw != nil {
@@ -51,7 +52,7 @@ func (upstreamDB *UpstreamDB) UpdateUpstreams() error {
 	defer txn.Abort()
 	for _, u := range upstreamDB.Upstreams {
 		// delete
-		if _, err := txn.DeleteAll(Upstream, "name", *(u.Group), *(u.Name)); err != nil {
+		if _, err := txn.DeleteAll(Upstream, "id", *(u.FullName)); err != nil {
 			return err
 		}
 		// insert
@@ -67,19 +68,24 @@ func (upstreamDB *UpstreamDB) UpdateUpstreams() error {
 var upstreamSchema = &memdb.TableSchema{
 	Name: Upstream,
 	Indexes: map[string]*memdb.IndexSchema{
+		"id": {
+			Name:    "id",
+			Unique:  true,
+			Indexer: &memdb.StringFieldIndex{Field: "FullName"},
+		},
 		"name": {
 			Name:         "name",
 			Unique:       true,
-			Indexer:      indexer(),
+			Indexer:      &memdb.StringFieldIndex{Field: "Name"},
 			AllowMissing: true,
 		},
 	},
 }
 
-func indexer() *memdb.CompoundIndex{
-	var idx = make([]memdb.Indexer, 0)
-	idx = append(idx, &memdb.StringFieldIndex{Field: "Group"})
-	idx = append(idx, &memdb.StringFieldIndex{Field: "Name"})
-	return &memdb.CompoundIndex{Indexes: idx, AllowMissing: false}
-}
+//func indexer() *memdb.CompoundMultiIndex{
+//	var idx = make([]memdb.Indexer, 0)
+//	idx = append(idx, &memdb.StringFieldIndex{Field: "Group"})
+//	idx = append(idx, &memdb.StringFieldIndex{Field: "Name"})
+//	return &memdb.CompoundMultiIndex{Indexes: idx, AllowMissing: false}
+//}
 

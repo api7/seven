@@ -13,12 +13,13 @@ const (
 type ServiceRequest struct {
 	Group string
 	Name string
+	FullName string
 }
 
 func (sr *ServiceRequest) FindByName() (*v1.Service, error){
 	txn := DB.Txn(false)
 	defer txn.Abort()
-	if raw, err := txn.First(Service, "name", sr.Group, sr.Name); err != nil {
+	if raw, err := txn.First(Service, "id", sr.FullName); err != nil {
 		return nil, err
 	} else {
 		if raw != nil {
@@ -50,7 +51,7 @@ func (db *ServiceDB) UpdateService() error{
 	defer txn.Abort()
 	for _, s := range db.Services {
 		// 1. delete
-		if _, err := txn.DeleteAll(Service, "name", *(s.Group), *(s.Name)); err != nil {
+		if _, err := txn.DeleteAll(Service, "id", *(s.FullName)); err != nil {
 			return err
 		}
 		// 2. insert
@@ -66,10 +67,15 @@ func (db *ServiceDB) UpdateService() error{
 var serviceSchema = &memdb.TableSchema{
 	Name: Service,
 	Indexes: map[string]*memdb.IndexSchema{
+		"id": {
+			Name:    "id",
+			Unique:  true,
+			Indexer: &memdb.StringFieldIndex{Field: "FullName"},
+		},
 		"name": {
 			Name:         "name",
 			Unique:       true,
-			Indexer:      indexer(),
+			Indexer:      &memdb.StringFieldIndex{Field: "Name"},
 			AllowMissing: true,
 		},
 	},

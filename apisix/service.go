@@ -13,8 +13,8 @@ import (
 
 // FindCurrentService find service from memDB,
 // if Not Found, find service from apisix
-func FindCurrentService(group, name string) (*v1.Service, error){
-	db := DB.ServiceRequest{Group: group, Name: name}
+func FindCurrentService(group, name, fullName string) (*v1.Service, error){
+	db := DB.ServiceRequest{Group: group, Name: name, FullName: fullName}
 	currentService, _ := db.FindByName()
 	if currentService != nil {
 		return currentService, nil
@@ -49,7 +49,7 @@ func ListService (group string) ([]*v1.Service, error) {
 	} else {
 		result := make([]*v1.Service, 0)
 		for _, u := range servicesResponse.Services.Services {
-			if n, err := u.convert(); err == nil {
+			if n, err := u.convert(group); err == nil {
 				result = append(result, n)
 			} else {
 				return nil, fmt.Errorf("service : %s 转换失败, %s", *u.ServiceValue.Desc, err.Error())
@@ -60,7 +60,7 @@ func ListService (group string) ([]*v1.Service, error) {
 }
 
 // convert convert Service from etcd to v1.Service
-func (u *Service)convert() (*v1.Service, error){
+func (u *Service)convert(group string) (*v1.Service, error){
 	// id
 	keys := strings.Split(*u.Key, "/")
 	id := keys[len(keys) - 1]
@@ -73,8 +73,11 @@ func (u *Service)convert() (*v1.Service, error){
 	for k, v := range u.ServiceValue.Plugins {
 		(*plugins)[k] = v
 	}
-
-	return &v1.Service{ID: &id, Name: name, UpstreamId: upstreamId, Plugins: plugins}, nil
+	fullName := *name
+	if group != ""{
+		fullName = group + "_" + *name
+	}
+	return &v1.Service{ID: &id, FullName: &fullName, Group: &group, Name: name, UpstreamId: upstreamId, Plugins: plugins}, nil
 }
 
 func AddService(service *v1.Service) (*ServiceResponse, error) {
@@ -116,7 +119,14 @@ func UpdateService(service *v1.Service) (*ServiceResponse, error) {
 			if err = json.Unmarshal(res, &uRes); err != nil {
 				return nil, err
 			} else {
-				return &uRes, nil
+				if uRes.Service.Key != nil {
+					return &uRes, nil
+				} else {
+					var errResp ErrorResponse
+					json.Unmarshal(res, &errResp)
+					glog.Error(errResp.Message)
+					return nil, fmt.Errorf("apisix service not expected response %s", errResp.Message)
+				}
 			}
 		}
 	}

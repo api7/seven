@@ -145,7 +145,7 @@ func NewServiceWorkers(services []*v1.Service, rwg *RouteWorkerGroup) ServiceWor
 func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 	for _, u := range upstreams {
 		op := Update
-		if currentUpstream, err := apisix.FindCurrentUpstream(*u.Group, *u.Name); err != nil {
+		if currentUpstream, err := apisix.FindCurrentUpstream(*u.Group, *u.Name, *u.FullName); err != nil {
 			// todo log error
 		} else {
 			paddingUpstream(u, currentUpstream)

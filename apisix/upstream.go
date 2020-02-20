@@ -14,8 +14,8 @@ import (
 
 // FindCurrentUpstream find upstream from memDB,
 // if Not Found, find upstream from apisix
-func FindCurrentUpstream(group, name string) (*v1.Upstream, error){
-	ur := &DB.UpstreamRequest{Group: group, Name: name}
+func FindCurrentUpstream(group, name, fullName string) (*v1.Upstream, error){
+	ur := &DB.UpstreamRequest{Group: group, Name: name, FullName: fullName}
 	currentUpstream, _ := ur.FindByName()
 	if currentUpstream != nil {
 		return currentUpstream, nil
@@ -151,8 +151,12 @@ func (u *Upstream) convert(group string) (*v1.Upstream, error) {
 		node := &v1.Node{IP: &ip, Port: &port, Weight: &weight}
 		nodes = append(nodes, node)
 	}
-
-	return &v1.Upstream{ID: &id, Group: &group, Name: name, Type: LBType, Key: key, Nodes: nodes}, nil
+	// fullName
+	fullName := *name
+	if group != ""{
+		fullName = group + "_" + *name
+	}
+	return &v1.Upstream{ID: &id, FullName: &fullName, Group: &group, Name: name, Type: LBType, Key: key, Nodes: nodes}, nil
 }
 
 type UpstreamsResponse struct {

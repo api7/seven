@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
+	"github.com/gxthrj/seven/DB"
+	"github.com/gxthrj/seven/conf"
 	"github.com/gxthrj/seven/utils"
 	"strings"
-	"github.com/gxthrj/seven/conf"
-	"github.com/gxthrj/seven/DB"
 )
 
 // FindCurrentRoute find current route in memDB
-func FindCurrentRoute(route *v1.Route) (*v1.Route,error){
-	db := &DB.RouteRequest{Name: *(route.Name)}
+func FindCurrentRoute(route *v1.Route) (*v1.Route, error) {
+	db := &DB.RouteRequest{Group: *route.Group, Name: *route.Name, FullName: *route.FullName}
 	currentRoute, _ := db.FindByName()
 	if currentRoute != nil {
 		return currentRoute, nil
@@ -22,7 +22,7 @@ func FindCurrentRoute(route *v1.Route) (*v1.Route,error){
 			// todo log error
 		} else {
 			for _, r := range routes {
-				if r.Name !=nil && *r.Name == *route.Name {
+				if r.Name != nil && *r.Name == *route.Name {
 					// insert to memDB
 					db := &DB.RouteDB{Routes: []*v1.Route{r}}
 					db.Insert()
@@ -47,7 +47,7 @@ func ListRoute(group string) ([]*v1.Route, error) {
 	} else {
 		routes := make([]*v1.Route, 0)
 		for _, u := range routesResponse.Routes.Routes {
-			if n, err := u.convert(); err == nil {
+			if n, err := u.convert(group); err == nil {
 				routes = append(routes, n)
 			} else {
 				return nil, fmt.Errorf("upstream: %s 转换失败, %s", *u.Value.Desc, err.Error())
@@ -108,8 +108,8 @@ func DeleteRoute(route *v1.Route) error {
 }
 
 type Redirect struct {
-	RetCode int64 `json:"ret_code"`
-	Uri string `json:"uri"`
+	RetCode int64  `json:"ret_code"`
+	Uri     string `json:"uri"`
 }
 
 func convert2RouteRequest(route *v1.Route) *RouteRequest {
@@ -123,7 +123,7 @@ func convert2RouteRequest(route *v1.Route) *RouteRequest {
 }
 
 // convert apisix RouteResponse -> apisix-types v1.Route
-func (r *Route) convert() (*v1.Route, error) {
+func (r *Route) convert(group string) (*v1.Route, error) {
 	// id
 	key := r.Key
 	ks := strings.Split(*key, "/")
@@ -144,8 +144,16 @@ func (r *Route) convert() (*v1.Route, error) {
 	var plugins v1.Plugins
 	plugins = r.Value.Plugins
 
+	// fullName
+	fullName := *name
+	if group != "" {
+		fullName = group + "_" + *name
+	}
+
 	return &v1.Route{
 		ID:         &id,
+		Group:      &group,
+		FullName:   &fullName,
 		Name:       name,
 		Host:       host,
 		Path:       path,
@@ -172,7 +180,7 @@ type RouteResponse struct {
 
 type Route struct {
 	Key   *string `json:"key"`   // route key
-	Value Value  `json:"value"` // route content
+	Value Value   `json:"value"` // route content
 }
 
 type Value struct {
