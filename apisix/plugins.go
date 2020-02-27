@@ -22,6 +22,7 @@ func BuildIpRestriction(whites, blacks *string) *IpRestriction {
 	return result
 }
 
+// Cors
 type Cors struct {
 	Origins []string `json:"origins,omitempty"`
 	Headers []string `json:"headers,omitempty"`
@@ -30,7 +31,7 @@ type Cors struct {
 }
 
 // BuildCors
-func BuildCors(enable bool, originStr, headerStr, methodStr *string, maxAge *int64) *Cors{
+func BuildCors(enable bool, originStr, headerStr, methodStr *string, maxAge *int64) *Cors {
 	result := &Cors{}
 	if enable {
 		if originStr != nil {
@@ -49,7 +50,52 @@ func BuildCors(enable bool, originStr, headerStr, methodStr *string, maxAge *int
 			result.MaxAge = *maxAge
 		}
 		return result
+	} else {
+		return nil
+	}
+}
+
+// routex
+type Routex struct {
+	Rules []Rule `json:"rules,inline"`
+}
+
+type Rule struct {
+	Priority int64  `json:"priority,omitempty"`
+	Upstream string `json:"upstream"`
+	Desc     string `json:"desc"`
+	Matches []Match `json:"matchs,omitempty"`
+}
+
+type Match struct {
+	Host   string   `json:"host,omitempty"`
+	Uri    string   `json:"uri,omitempty"`
+	Use    string   `json:"use"`
+	Key    string   `json:"key"`
+	Values []string `json:"values,omitempty"`
+}
+
+// BuildRoutex
+func BuildRoutex(enable bool, rules []Rule) *Routex{
+	if enable {
+		result := &Routex{Rules: rules}
+		return result
 	}else {
+		return nil
+	}
+}
+
+// token
+type Token struct {
+	IgnoreUri []string `json:"ignore_uri,omitempty"`
+}
+
+// BuildToken
+func BuildToken(enable bool, ignoreUris []string) *Token {
+	if enable {
+		result := &Token{IgnoreUri: ignoreUris}
+		return result
+	} else {
 		return nil
 	}
 }

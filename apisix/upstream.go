@@ -146,7 +146,10 @@ func (u *Upstream) convert(group string) (*v1.Upstream, error) {
 	for k, v := range u.UpstreamNodes.Nodes {
 		ks := strings.Split(k, ":")
 		ip := ks[0]
-		port, _ := strconv.Atoi(ks[1])
+		port := 80
+		if len(ks) > 1 {
+			port, _ = strconv.Atoi(ks[1])
+		}
 		weight := int(v)
 		node := &v1.Node{IP: &ip, Port: &port, Weight: &weight}
 		nodes = append(nodes, node)
