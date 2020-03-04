@@ -116,6 +116,17 @@ func UpdateUpstream(upstream *v1.Upstream) error {
 	}
 }
 
+
+func DeleteUpstream(upstream *v1.Upstream) error{
+	baseUrl := conf.FindUrl(*upstream.Group)
+	url := fmt.Sprintf("%s/upstreams/%s", baseUrl, *upstream.ID)
+	if _, err := utils.Delete(url); err != nil {
+		return err
+	} else {
+		return nil
+	}
+}
+
 func convert2UpstreamRequest(upstream *v1.Upstream) *UpstreamRequest {
 	nodes := make(map[string]int64)
 	for _, u := range upstream.Nodes {
