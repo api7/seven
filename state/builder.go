@@ -180,7 +180,21 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 					}
 					// todo if fromKind == WatchFromKind
 					if u.FromKind != nil && *u.FromKind == WatchFromKind {
-						// update nodes
+						// 1.update nodes
+						if err = apisix.PatchNodes(u, u.Nodes); err != nil {
+							glog.Errorf(err.Error())
+						}
+						// 2. sync memDB
+						us := []*v1.Upstream{u}
+						if !needToUpdate {
+							currentUpstream.Nodes = u.Nodes
+							us = []*v1.Upstream{currentUpstream}
+						}
+						upstreamDB := &DB.UpstreamDB{Upstreams: us}
+						if err := upstreamDB.UpdateUpstreams(); err != nil {
+							// todo log error
+							glog.Errorf(err.Error())
+						}
 					}
 				} else {
 					op = Create
