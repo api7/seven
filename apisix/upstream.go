@@ -116,6 +116,21 @@ func UpdateUpstream(upstream *v1.Upstream) error {
 	}
 }
 
+func PatchNodes(upstream *v1.Upstream, nodes []*v1.Node) error{
+	baseUrl := conf.FindUrl(*upstream.Group)
+	url := fmt.Sprintf("%s/upstreams/%s/nodes", baseUrl, *upstream.ID)
+	nodeMap := convertNodes(nodes)
+	if b, err := json.Marshal(nodeMap); err != nil {
+		return err
+	} else {
+		if _, err := utils.Patch(url, b); err != nil {
+			return err
+		} else {
+			return nil
+		}
+	}
+}
+
 
 func DeleteUpstream(upstream *v1.Upstream) error{
 	baseUrl := conf.FindUrl(*upstream.Group)
@@ -128,10 +143,7 @@ func DeleteUpstream(upstream *v1.Upstream) error{
 }
 
 func convert2UpstreamRequest(upstream *v1.Upstream) *UpstreamRequest {
-	nodes := make(map[string]int64)
-	for _, u := range upstream.Nodes {
-		nodes[*u.IP+":"+strconv.Itoa(*u.Port)] = int64(*u.Weight)
-	}
+	nodes := convertNodes(upstream.Nodes)
 	return &UpstreamRequest{
 		LBType: *upstream.Type,
 		HashOn: upstream.HashOn,
@@ -139,6 +151,14 @@ func convert2UpstreamRequest(upstream *v1.Upstream) *UpstreamRequest {
 		Desc:   *upstream.Name,
 		Nodes:  nodes,
 	}
+}
+
+func convertNodes(nodes []*v1.Node) map[string]int64{
+	result := make(map[string]int64)
+	for _, u := range nodes {
+		result[*u.IP+":"+strconv.Itoa(*u.Port)] = int64(*u.Weight)
+	}
+	return result
 }
 
 // convert convert Upstream from etcd to v1.Upstream

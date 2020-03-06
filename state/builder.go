@@ -11,7 +11,10 @@ import (
 )
 
 
-const ApisixUpstream = "ApisixUpstream"
+const (
+	ApisixUpstream = "ApisixUpstream"
+	WatchFromKind = "watch"
+)
 
 //// InitDB insert object into memDB first time
 //func InitDB(){
@@ -174,6 +177,10 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 						if err = apisix.UpdateUpstream(u); err != nil {
 							glog.Errorf(err.Error())
 						}
+					}
+					// todo if fromKind == WatchFromKind
+					if u.FromKind != nil && *u.FromKind == WatchFromKind {
+						// update nodes
 					}
 				} else {
 					op = Create
