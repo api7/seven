@@ -22,7 +22,7 @@ func FindCurrentService(group, name, fullName string) (*v1.Service, error){
 		// find service from apisix
 		if services, err := ListService(group); err != nil {
 			// todo log error
-			glog.Info(err.Error())
+			glog.V(2).Info(err.Error())
 		}else {
 			for _, s := range services {
 				if s.Name != nil && *(s.Name) == name {
@@ -138,7 +138,7 @@ func convert2ServiceRequest(service *v1.Service) *ServiceRequest {
 		UpstreamId: service.UpstreamId,
 		Plugins:    service.Plugins,
 	}
-	glog.Info(*request.Desc)
+	glog.V(2).Info(*request.Desc)
 	return request
 }
 

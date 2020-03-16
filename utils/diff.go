@@ -22,7 +22,7 @@ func HasDiff(a, b interface{}) (bool, error){
 	if d, err := differ.Compare(aJSON, bJSON); err != nil {
 		return false, err
 	}else {
-		glog.Info(d.Deltas())
+		glog.V(2).Info(d.Deltas())
 		return d.Modified(), nil
 	}
 }

@@ -39,11 +39,11 @@ func (w *serviceWorker) start(rwg *RouteWorkerGroup) {
 }
 // trigger add to queue
 func (w *serviceWorker) trigger(event Event, rwg *RouteWorkerGroup) error {
-	glog.Infof("1.service trigger from %s, %s", event.Op, event.Kind)
+	glog.V(2).Infof("1.service trigger from %s, %s", event.Op, event.Kind)
 	defer close(w.Quit)
 	// consumer Event set upstreamID
 	upstream := event.Obj.(*v1.Upstream)
-	glog.Infof("2.service trigger from %s, %s", event.Op, *upstream.Name)
+	glog.V(2).Infof("2.service trigger from %s, %s", event.Op, *upstream.Name)
 
 	w.UpstreamId = upstream.ID
 	// add to queue
@@ -116,7 +116,7 @@ func SolverService(services []*v1.Service, rwg RouteWorkerGroup) error{
 				// 1. sync apisix and get id
 				if serviceResponse, err := apisix.AddService(svc); err != nil {
 					// todo log error
-					glog.Info(err.Error())
+					glog.V(2).Info(err.Error())
 				}else {
 					tmp := strings.Split(*serviceResponse.Service.Key, "/")
 					*svc.ID = tmp[len(tmp) - 1]
@@ -124,7 +124,7 @@ func SolverService(services []*v1.Service, rwg RouteWorkerGroup) error{
 				// 2. sync memDB
 				db := &DB.ServiceDB{Services: []*v1.Service{svc}}
 				db.Insert()
-				glog.Infof("create service %s, %s", *svc.Name, *svc.UpstreamId)
+				glog.V(2).Infof("create service %s, %s", *svc.Name, *svc.UpstreamId)
 			}else {
 				op = Update
 				needToUpdate := true
@@ -143,7 +143,7 @@ func SolverService(services []*v1.Service, rwg RouteWorkerGroup) error{
 					}
 					// 2. sync apisix
 					apisix.UpdateService(svc)
-					glog.Infof("update service %s, %s", *svc.Name, *svc.UpstreamId)
+					glog.V(2).Infof("update service %s, %s", *svc.Name, *svc.UpstreamId)
 				}
 
 			}
@@ -152,7 +152,7 @@ func SolverService(services []*v1.Service, rwg RouteWorkerGroup) error{
 		routeWorkers := rwg[*svc.Name]
 		for _, rw := range routeWorkers{
 			event := &Event{Kind: ServiceKind, Op: op, Obj: svc}
-			glog.Infof("send event %s, %s, %s", event.Kind, event.Op, *svc.Name)
+			glog.V(2).Infof("send event %s, %s, %s", event.Kind, event.Op, *svc.Name)
 			rw.Event <- *event
 		}
 	}

@@ -77,7 +77,7 @@ func ListUpstream(group string) ([]*v1.Upstream, error) {
 func AddUpstream(upstream *v1.Upstream) (*UpstreamResponse, error) {
 	baseUrl := conf.FindUrl(*upstream.Group)
 	url := fmt.Sprintf("%s/upstreams", baseUrl)
-	glog.Info(url)
+	glog.V(2).Info(url)
 	ur := convert2UpstreamRequest(upstream)
 	if b, err := json.Marshal(ur); err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func AddUpstream(upstream *v1.Upstream) (*UpstreamResponse, error) {
 				glog.Errorf("json Unmarshal error: %s", err.Error())
 				return nil, err
 			} else {
-				glog.Info(uRes)
+				glog.V(2).Info(uRes)
 				if uRes.Upstream.Key != nil {
 					return &uRes, nil
 				} else {

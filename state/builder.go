@@ -86,7 +86,7 @@ func (r *routeWorker) trigger(event Event) error{
 	// consumer Event
 	service := event.Obj.(*v1.Service)
 	r.ServiceId = service.ID
-	glog.Infof("trigger routeWorker %s from %s, %s", *r.Name, event.Op, *service.Name)
+	glog.V(2).Infof("trigger routeWorker %s from %s, %s", *r.Name, event.Op, *service.Name)
 
 	// padding
 	currentRoute, _ := apisix.FindCurrentRoute(r.Route)
@@ -115,7 +115,7 @@ func (r *routeWorker) sync(){
 		}
 		// 2. sync apisix
 		apisix.UpdateRoute(r.Route)
-		glog.Infof("update route %s, %s", *r.Name, *r.ServiceId)
+		glog.V(2).Infof("update route %s, %s", *r.Name, *r.ServiceId)
 	} else {
 		// 1. sync apisix and get id
 		if res, err := apisix.AddRoute(r.Route); err != nil {
@@ -128,7 +128,7 @@ func (r *routeWorker) sync(){
 		// 2. sync memDB
 		db := &DB.RouteDB{Routes: []*v1.Route{r.Route}}
 		db.Insert()
-		glog.Infof("create route %s, %s", *r.Name, *r.ServiceId)
+		glog.V(2).Infof("create route %s, %s", *r.Name, *r.ServiceId)
 	}
 }
 
@@ -178,7 +178,7 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 							glog.Errorf(err.Error())
 						}
 					}
-					// todo if fromKind == WatchFromKind
+					// if fromKind == WatchFromKind
 					if u.FromKind != nil && *u.FromKind == WatchFromKind {
 						// 1.update nodes
 						if err = apisix.PatchNodes(u, u.Nodes); err != nil {
@@ -212,7 +212,7 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 				}
 			}
 		}
-		glog.Infof("solver upstream %s:%s", op, *u.Name)
+		glog.V(2).Infof("solver upstream %s:%s", op, *u.Name)
 		// anyway, broadcast to service
 		serviceWorkers := swg[*u.Name]
 		for _, sw := range serviceWorkers{
