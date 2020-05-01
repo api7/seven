@@ -1,8 +1,11 @@
 package utils
 
 import (
-	"gopkg.in/resty.v1"
+	"fmt"
+	"net/http"
 	"time"
+	
+	"gopkg.in/resty.v1"
 )
 
 const timeout = 3000
@@ -17,6 +20,9 @@ func Post(url string, bytes []byte) ([]byte, error){
 	if err != nil {
 		return nil, err
 	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("status: %d, body: %s", resp.StatusCode(), resp.Body())
+	}
 	return resp.Body(), nil
 }
 
@@ -30,6 +36,9 @@ func Patch(url string, bytes []byte) ([]byte, error){
 	if err != nil {
 		return nil, err
 	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("status: %d, body: %s", resp.StatusCode(), resp.Body())
+	}
 	return resp.Body(), nil
 }
 
@@ -41,6 +50,9 @@ func Delete(url string) ([]byte, error) {
 	resp, err := r.Delete(url)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("status: %d, body: %s", resp.StatusCode(), resp.Body())
 	}
 	return resp.Body(), nil
 }
