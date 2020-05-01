@@ -3,12 +3,13 @@ package apisix
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
-	"github.com/gxthrj/seven/utils"
-	"github.com/golang/glog"
 	"strings"
+
+	"github.com/golang/glog"
+	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
 	"github.com/gxthrj/seven/DB"
 	"github.com/gxthrj/seven/conf"
+	"github.com/gxthrj/seven/utils"
 )
 
 // FindCurrentService find service from memDB,
@@ -21,8 +22,8 @@ func FindCurrentService(group, name, fullName string) (*v1.Service, error){
 	}else {
 		// find service from apisix
 		if services, err := ListService(group); err != nil {
-			// todo log error
-			glog.V(2).Info(err.Error())
+			glog.Errorf("list services in etcd failed, group: %s, err: %+v", group, err)
+			return nil, fmt.Errorf("list services failed, err: %+v", err)
 		}else {
 			for _, s := range services {
 				if s.Name != nil && *(s.Name) == name {
@@ -42,17 +43,20 @@ func FindCurrentService(group, name, fullName string) (*v1.Service, error){
 func ListService (group string) ([]*v1.Service, error) {
 	baseUrl := conf.FindUrl(group)
 	url := baseUrl + "/services"
-	ret, _ := Get(url)
+	ret, err := Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("http get failed, url: %s, err: %+v", url, err)
+	}
 	var servicesResponse ServicesResponse
 	if err := json.Unmarshal(ret, &servicesResponse); err != nil {
-		return nil, fmt.Errorf("json转换失败")
+		return nil, fmt.Errorf("json unmarshal failed, err: %+v", err)
 	} else {
 		result := make([]*v1.Service, 0)
 		for _, u := range servicesResponse.Services.Services {
 			if n, err := u.convert(group); err == nil {
 				result = append(result, n)
 			} else {
-				return nil, fmt.Errorf("service : %s 转换失败, %s", *u.ServiceValue.Desc, err.Error())
+				return nil, fmt.Errorf("service : %+v 转换失败, %s", u.ServiceValue, err.Error())
 			}
 		}
 		return result, nil
@@ -88,7 +92,7 @@ func AddService(service *v1.Service) (*ServiceResponse, error) {
 		return nil, err
 	} else {
 		if res, err := utils.Post(url, b); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("http post failed, err: %+v", err)
 		} else {
 			var uRes ServiceResponse
 			if err = json.Unmarshal(res, &uRes); err != nil {

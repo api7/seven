@@ -1,8 +1,11 @@
 package apisix
 
 import (
-	"gopkg.in/resty.v1"
+	"fmt"
+	"net/http"
 	"time"
+	
+	"gopkg.in/resty.v1"
 )
 const (
 	timeout = 3000
@@ -16,6 +19,9 @@ func Get(url string) ([]byte, error){
 	resp, err := r.Get(url)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("status: %d, body: %s", resp.StatusCode(), resp.Body())
 	}
 	return resp.Body(), nil
 }

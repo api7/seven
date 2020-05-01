@@ -111,7 +111,8 @@ func (r *routeWorker) sync(){
 		// 1. sync memDB
 		db := &DB.RouteDB{Routes: []*v1.Route{r.Route}}
 		if err := db.UpdateRoute(); err != nil {
-			// todo log error
+			glog.Errorf("update route failed, route: %#v, err: %+v", r.Route, err)
+			return
 		}
 		// 2. sync apisix
 		apisix.UpdateRoute(r.Route)
@@ -119,7 +120,8 @@ func (r *routeWorker) sync(){
 	} else {
 		// 1. sync apisix and get id
 		if res, err := apisix.AddRoute(r.Route); err != nil {
-			// todo log error
+			glog.Errorf("add route failed, route: %#v, err: %+v", r.Route, err)
+			return
 		} else {
 			key := res.Route.Key
 			tmp := strings.Split(*key, "/")
@@ -149,7 +151,8 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 	for _, u := range upstreams {
 		op := Update
 		if currentUpstream, err := apisix.FindCurrentUpstream(*u.Group, *u.Name, *u.FullName); err != nil {
-			// todo log error
+			glog.Errorf("solver upstream failed, find upstream from etcd failed, upstream: %+v, err: %+v", u, err)
+			return
 		} else {
 			paddingUpstream(u, currentUpstream)
 			// diff
@@ -170,19 +173,21 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 						// 1.sync memDB
 						upstreamDB := &DB.UpstreamDB{Upstreams: []*v1.Upstream{u}}
 						if err := upstreamDB.UpdateUpstreams(); err != nil {
-							// todo log error
-							glog.Errorf(err.Error())
+							glog.Errorf("solver upstream failed, update upstream to local db failed, err: %s", err.Error())
+							return
 						}
 						// 2.sync apisix
 						if err = apisix.UpdateUpstream(u); err != nil {
-							glog.Errorf(err.Error())
+							glog.Errorf("solver upstream failed, update upstream to etcd failed, err: %+v", err)
+							return
 						}
 					}
 					// if fromKind == WatchFromKind
 					if u.FromKind != nil && *u.FromKind == WatchFromKind {
 						// 1.update nodes
 						if err = apisix.PatchNodes(u, u.Nodes); err != nil {
-							glog.Errorf(err.Error())
+							glog.Errorf("solver upstream failed, patch node info to etcd failed, err: %+v", err)
+							return
 						}
 						// 2. sync memDB
 						us := []*v1.Upstream{u}
@@ -192,15 +197,16 @@ func SolverUpstream(upstreams []*v1.Upstream, swg ServiceWorkerGroup){
 						}
 						upstreamDB := &DB.UpstreamDB{Upstreams: us}
 						if err := upstreamDB.UpdateUpstreams(); err != nil {
-							// todo log error
-							glog.Errorf(err.Error())
+							glog.Errorf("solver upstream failed, update upstream to local db failed, err: %s", err.Error())
+							return
 						}
 					}
 				} else {
 					op = Create
 					// 1.sync apisix and get response
 					if upstreamResponse, err := apisix.AddUpstream(u); err != nil {
-						// todo log error
+						glog.Errorf("solver upstream failed, update upstream to etcd failed, err: %+v", err)
+						return
 					}else {
 						tmp := strings.Split(*upstreamResponse.Upstream.Key, "/")
 						*u.ID = tmp[len(tmp) - 1]

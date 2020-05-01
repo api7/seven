@@ -3,11 +3,12 @@ package apisix
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
 	"github.com/gxthrj/seven/DB"
 	"github.com/gxthrj/seven/conf"
 	"github.com/gxthrj/seven/utils"
-	"strings"
 )
 
 // FindCurrentRoute find current route in memDB
@@ -19,7 +20,7 @@ func FindCurrentRoute(route *v1.Route) (*v1.Route, error) {
 	} else {
 		// find from apisix
 		if routes, err := ListRoute(*route.Group); err != nil {
-			// todo log error
+			return nil, fmt.Errorf("list routes from etcd failed, err: %+v", err)
 		} else {
 			for _, r := range routes {
 				if r.Name != nil && *r.Name == *route.Name {
@@ -40,10 +41,13 @@ func FindCurrentRoute(route *v1.Route) (*v1.Route, error) {
 func ListRoute(group string) ([]*v1.Route, error) {
 	baseUrl := conf.FindUrl(group)
 	url := baseUrl + "/routes"
-	ret, _ := Get(url)
+	ret, err := Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("http get failed, url: %s, err: %+v", url, err)
+	}
 	var routesResponse RoutesResponse
 	if err := json.Unmarshal(ret, &routesResponse); err != nil {
-		return nil, fmt.Errorf("json转换失败")
+		return nil, fmt.Errorf("json unmarshal failed, err: %+v", err)
 	} else {
 		routes := make([]*v1.Route, 0)
 		for _, u := range routesResponse.Routes.Routes {
