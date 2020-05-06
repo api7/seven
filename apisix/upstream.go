@@ -3,13 +3,14 @@ package apisix
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/golang/glog"
-	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
-	"github.com/gxthrj/seven/conf"
-	"github.com/gxthrj/seven/utils"
 	"strconv"
 	"strings"
+
+	"github.com/golang/glog"
+	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
 	"github.com/gxthrj/seven/DB"
+	"github.com/gxthrj/seven/conf"
+	"github.com/gxthrj/seven/utils"
 )
 
 // FindCurrentUpstream find upstream from memDB,
@@ -22,7 +23,8 @@ func FindCurrentUpstream(group, name, fullName string) (*v1.Upstream, error){
 	} else {
 		// find upstream from apisix
 		if upstreams, err := ListUpstream(group); err != nil {
-			// todo log error
+			glog.Errorf("list upstreams in etcd failed, group: %s, err: %+v", group, err)
+			return nil, fmt.Errorf("list upstreams failed, err: %+v", err)
 		}else {
 			for _, upstream := range upstreams {
 				if upstream.Name != nil && *(upstream.Name) == name {
@@ -44,7 +46,10 @@ func FindCurrentUpstream(group, name, fullName string) (*v1.Upstream, error){
 func ListUpstream(group string) ([]*v1.Upstream, error) {
 	baseUrl := conf.FindUrl(group)
 	url := baseUrl + "/upstreams"
-	ret, _ := Get(url)
+	ret, err := Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("http get failed, url: %s, err: %+v", url, err)
+	}
 	var upstreamsResponse UpstreamsResponse
 	if err := json.Unmarshal(ret, &upstreamsResponse); err != nil {
 		return nil, fmt.Errorf("json转换失败")
@@ -83,7 +88,7 @@ func AddUpstream(upstream *v1.Upstream) (*UpstreamResponse, error) {
 		return nil, err
 	} else {
 		if res, err := utils.Post(url, b); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("http post failed, url: %s, err: %+v", url, err)
 		} else {
 			var uRes UpstreamResponse
 			if err = json.Unmarshal(res, &uRes); err != nil {
@@ -109,7 +114,7 @@ func UpdateUpstream(upstream *v1.Upstream) error {
 		return err
 	} else {
 		if _, err := utils.Patch(url, b); err != nil {
-			return err
+			return fmt.Errorf("http patch failed, url: %s, err: %+v", url, err)
 		} else {
 			return nil
 		}
@@ -124,7 +129,7 @@ func PatchNodes(upstream *v1.Upstream, nodes []*v1.Node) error{
 		return err
 	} else {
 		if _, err := utils.Patch(url, b); err != nil {
-			return err
+			return fmt.Errorf("http patch failed, url: %s, err: %+v", url, err)
 		} else {
 			return nil
 		}
@@ -136,7 +141,7 @@ func DeleteUpstream(upstream *v1.Upstream) error{
 	baseUrl := conf.FindUrl(*upstream.Group)
 	url := fmt.Sprintf("%s/upstreams/%s", baseUrl, *upstream.ID)
 	if _, err := utils.Delete(url); err != nil {
-		return err
+		return fmt.Errorf("http delete failed, url: %s, err: %+v", url, err)
 	} else {
 		return nil
 	}
