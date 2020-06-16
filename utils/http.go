@@ -20,7 +20,7 @@ func Post(url string, bytes []byte) ([]byte, error){
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode() != http.StatusOK {
+	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated{
 		return nil, fmt.Errorf("status: %d, body: %s", resp.StatusCode(), resp.Body())
 	}
 	return resp.Body(), nil
