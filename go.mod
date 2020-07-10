@@ -15,3 +15,5 @@ require (
 	github.com/yudai/pp v2.0.1+incompatible // indirect
 	gopkg.in/resty.v1 v1.12.0
 )
+
+replace github.com/gxthrj/apisix-types v0.1.0 => github.com/api7/types v0.1.0
