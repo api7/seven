@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/gxthrj/apisix-types v0.1.0
+	github.com/gxthrj/apisix-types v0.1.3
 	github.com/hashicorp/go-memdb v1.0.4
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/onsi/ginkgo v1.11.0 // indirect
@@ -16,4 +16,4 @@ require (
 	gopkg.in/resty.v1 v1.12.0
 )
 
-replace github.com/gxthrj/apisix-types v0.1.0 => github.com/api7/types v0.1.0
+replace github.com/gxthrj/apisix-types v0.1.3 => github.com/api7/types v0.1.3
