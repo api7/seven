@@ -2,6 +2,7 @@ package apisix
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
@@ -92,10 +93,31 @@ type SslsResponse struct {
 }
 
 type SslList struct {
-	SslNodes []SslNode `json:"nodes"`
+	SslNodes SslSet `json:"nodes"`
 }
 
 type SslNode struct {
 	Key *string `json:"key"`
 	Ssl *v1.Ssl `json:"value"`
+}
+
+type SslSet []SslNode
+
+// SslSet.UnmarshalJSON implements json.Unmarshaler interface.
+// lua-cjson doesn't distinguish empty array and table,
+// and by default empty array will be encoded as '{}'.
+// We have to maintain the compatibility.
+func (set *SslSet) UnmarshalJSON(p []byte) error {
+	if p[0] == '{' {
+		if len(p) != 2 {
+			return errors.New("unexpected non-empty object")
+		}
+		return nil
+	}
+	var ssls []SslNode
+	if err := json.Unmarshal(p, &ssls); err != nil {
+		return err
+	}
+	*set = ssls
+	return nil
 }
