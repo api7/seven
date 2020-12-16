@@ -2,9 +2,10 @@ package apisix
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
-	
+
 	"github.com/gxthrj/apisix-types/pkg/apis/apisix/v1"
 	"github.com/gxthrj/seven/DB"
 	"github.com/gxthrj/seven/conf"
@@ -173,8 +174,29 @@ type RoutesResponse struct {
 }
 
 type Routes struct {
-	Key    string  `json:"key"`
-	Routes []Route `json:"nodes"`
+	Key    string   `json:"key"`
+	Routes RouteSet `json:"nodes"`
+}
+
+type RouteSet []Route
+
+// RouteSet.UnmarshalJSON implements json.Unmarshaler interface.
+// lua-cjson doesn't distinguish empty array and table,
+// and by default empty array will be encoded as '{}'.
+// We have to maintain the compatibility.
+func (set *RouteSet) UnmarshalJSON(p []byte) error {
+	if p[0] == '{' {
+		if len(p) != 2 {
+			return errors.New("unexpected non-empty object")
+		}
+		return nil
+	}
+	var route []Route
+	if err := json.Unmarshal(p, &route); err != nil {
+		return err
+	}
+	*set = route
+	return nil
 }
 
 type RouteResponse struct {

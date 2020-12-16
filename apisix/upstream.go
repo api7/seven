@@ -215,7 +215,7 @@ type Upstreams struct {
 
 type UpstreamSet []Upstream
 
-// upstreams.nmarshalJSON implements json.Unmarshaler interface.
+// UpstreamSet.UnmarshalJSON implements json.Unmarshaler interface.
 // lua-cjson doesn't distinguish empty array and table,
 // and by default empty array will be encoded as '{}'.
 // We have to maintain the compatibility.
