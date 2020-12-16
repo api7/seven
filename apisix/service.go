@@ -2,6 +2,7 @@ package apisix
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -152,14 +153,34 @@ type ServiceRequest struct {
 	Plugins    *v1.Plugins `json:"plugins,omitempty"`
 }
 
-
 type ServicesResponse struct {
 	Services Services `json:"node"`
 }
 
-type Services struct{
-	Key string `json:"key"` // 用来定位upstreams 列表
-	Services []Service `json:"nodes"`
+type Services struct {
+	Key      string     `json:"key"` // 用来定位upstreams 列表
+	Services ServiceSet `json:"nodes"`
+}
+
+type ServiceSet []Service
+
+// UpstreamSet.UnmarshalJSON implements json.Unmarshaler interface.
+// lua-cjson doesn't distinguish empty array and table,
+// and by default empty array will be encoded as '{}'.
+// We have to maintain the compatibility.
+func (set *ServiceSet) UnmarshalJSON(p []byte) error {
+	if p[0] == '{' {
+		if len(p) != 2 {
+			return errors.New("unexpected non-empty object")
+		}
+		return nil
+	}
+	var svcs []Service
+	if err := json.Unmarshal(p, &svcs); err != nil {
+		return err
+	}
+	*set = svcs
+	return nil
 }
 
 type ServiceResponse struct {
