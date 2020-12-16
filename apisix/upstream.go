@@ -2,6 +2,7 @@ package apisix
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -208,8 +209,29 @@ type UpstreamResponse struct {
 }
 
 type Upstreams struct {
-	Key       string     `json:"key"` // 用来定位upstreams 列表
-	Upstreams []Upstream `json:"nodes"`
+	Key       string      `json:"key"` // 用来定位upstreams 列表
+	Upstreams UpstreamSet `json:"nodes"`
+}
+
+type UpstreamSet []Upstream
+
+// upstreams.nmarshalJSON implements json.Unmarshaler interface.
+// lua-cjson doesn't distinguish empty array and table,
+// and by default empty array will be encoded as '{}'.
+// We have to maintain the compatibility.
+func (set *UpstreamSet) UnmarshalJSON(p []byte) error {
+	if p[0] == '{' {
+		if len(p) != 2 {
+			return errors.New("unexpected non-empty object")
+		}
+		return nil
+	}
+	var ups []Upstream
+	if err := json.Unmarshal(p, &ups); err != nil {
+		return err
+	}
+	*set = ups
+	return nil
 }
 
 type Upstream struct {
