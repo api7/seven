@@ -67,7 +67,7 @@ func Delete(url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode() != http.StatusOK {
+	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusNotFound {
 		return nil, fmt.Errorf("status: %d, body: %s", resp.StatusCode(), resp.Body())
 	}
 	return resp.Body(), nil
