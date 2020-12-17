@@ -150,9 +150,12 @@ func (r *Route) convert(group string) (*v1.Route, error) {
 	plugins = r.Value.Plugins
 
 	// fullName
-	fullName := *name
+	fullName := "unknown"
+	if name != nil {
+		fullName = *name
+	}
 	if group != "" {
-		fullName = group + "_" + *name
+		fullName = group + "_" + fullName
 	}
 
 	return &v1.Route{
