@@ -79,7 +79,11 @@ func (rc *RouteCompare) Sync() error {
 			}
 		}
 		if needToDel {
-			request := DB.RouteRequest{Name: *old.Name}
+			fullName := *old.Name
+			if *old.Group != "" {
+				fullName = *old.Group + "_" + *old.Name
+			}
+			request := DB.RouteRequest{Name: *old.Name, FullName: fullName}
 
 			if route, err := request.FindByName(); err != nil {
 				// log error
