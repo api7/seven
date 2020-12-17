@@ -72,3 +72,19 @@ func TestRouteUnmarshalJSON(t *testing.T) {
 	assert.Equal(t, *route.Routes[0].Value.Methods[0], "GET")
 	assert.Equal(t, *route.Routes[0].Value.Methods[1], "POST")
 }
+
+func TestRouteConvertWithoutDesc(t *testing.T) {
+	upsId := "1"
+	svcId := "2"
+	key := "foo/bar"
+	r := &Route{
+		Key: &key,
+		Value: Value{
+			UpstreamId: &upsId,
+			ServiceId:  &svcId,
+			Host:       nil,
+		},
+	}
+	_, err := r.convert("mygroup")
+	assert.Nil(t, err)
+}
